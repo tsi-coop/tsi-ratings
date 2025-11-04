@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Partner Console - TSI Ratings</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --tsi-primary: #006A67;
+            /* Primary Dark Teal Color */
+            --background: #f4fbf9;
+            /* Light, clean background */
+            --tsi-accent: #ffb900;
+            /* Yellow accent for scores/actions */
+        }
+
+        body {
+            background-color: var(--background);
+            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        }
+
+        .primary-bg {
+            background-color: var(--tsi-primary);
+        }
+
+        .primary-text {
+            color: var(--tsi-primary);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .score-display {
+            font-size: 3rem;
+            line-height: 1;
+            font-weight: 700;
+            color: var(--tsi-accent);
+            /* Use a contrasting color for score */
+        }
+
+        .button-primary {
+            background-color: var(--tsi-primary);
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        .button-primary:hover {
+            background-color: #004d4a;
+        }
+
+        .verification-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+
+<!-- Header / Navbar -->
+<header class="primary-bg text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+        <!-- Logo -->
+        <div class="flex items-center space-x-3">
+            <span class="text-xl font-semibold tracking-wider">TSI Ratings</span>
+        </div>
+        <!-- Navigation -->
+        <nav class="flex items-center space-x-6">
+            <a href="#" class="hover:text-gray-200 transition">Verification Console</a>
+            <a href="#" class="hover:text-gray-200 transition">Reporting</a>
+            <span class="text-sm border-l border-gray-400 pl-6">
+                    Financial Partner Name
+                </span>
+            <button class="text-sm font-medium hover:text-red-300 transition">Logout</button>
+        </nav>
+    </div>
+</header>
+
+<!-- Main Content Area -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Financial Partner Console</h1>
+    <p class="text-gray-600 mb-8">Focus: Trust and integrity validation of MSME operational scores for confident underwriting.</p>
+
+    <!-- Verification Metrics Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <!-- Card 1: Total Verifications -->
+        <div class="card text-center">
+            <p class="text-sm font-medium text-gray-500">Total Verifications Performed (YTD)</p>
+            <div class="score-display text-gray-800 mt-2">1,245</div>
+        </div>
+        <!-- Card 2: Successful Verifications -->
+        <div class="card text-center">
+            <p class="text-sm font-medium text-gray-500">Successful Verifications</p>
+            <div class="score-display text-green-600 mt-2">98.2%</div>
+        </div>
+        <!-- Card 3: Failed/Tampered Flags -->
+        <div class="card text-center">
+            <p class="text-sm font-medium text-gray-500">Tamper Flags / Failed</p>
+            <div class="score-display text-red-600 mt-2">18</div>
+        </div>
+    </div>
+
+    <!-- TSI TOKEN VERIFICATION TOOL -->
+    <div class="card">
+        <h2 class="text-xl font-semibold primary-text mb-6 border-b pb-3">TSI Token Verification Tool</h2>
+
+        <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8">
+            <!-- Input Section -->
+            <div class="md:w-1/2">
+                <label for="token-id" class="block text-sm font-medium text-gray-700 mb-2">
+                    Enter TSI Token ID or Blockchain TxID
+                </label>
+                <input type="text" id="token-id" placeholder="e.g., MSME ID or TxID from QR Code Scan"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-tsi-primary focus:border-tsi-primary transition duration-150">
+                <p class="text-xs text-gray-500 mt-1">
+                    Input the tokenized hash or blockchain transaction ID copied from the MSME's TSI Certificate QR Code.
+                </p>
+
+                <button onclick="verifyTsiToken()"
+                        class="button-primary w-full mt-6 px-4 py-2 rounded-md text-lg font-semibold shadow-md hover:shadow-lg transition duration-200">
+                    Verify Score Integrity
+                </button>
+            </div>
+
+            <!-- Result Display Section -->
+            <div class="md:w-1/2 border-t md:border-t-0 md:border-l pt-6 md:pl-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Verification Result</h3>
+
+                <!-- Dynamic Result Area -->
+                <div id="verification-result-container" class="space-y-3">
+                    <p class="text-gray-500" id="status-message">Awaiting Token ID input...</p>
+
+                    <!-- Example: Success State (Hidden by default) -->
+                    <div id="result-success" class="hidden bg-green-50 p-4 border border-green-200 rounded-md">
+                        <p class="font-bold text-green-800 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            VALID: Blockchain Record Matched
+                        </p>
+                        <p class="text-sm text-green-700 mt-2">
+                            The TSI Score data for **MSME-0042** is 100% verified and immutable.
+                        </p>
+                    </div>
+
+                    <!-- Example: Tampered State (Hidden by default) -->
+                    <div id="result-tampered" class="hidden bg-red-50 p-4 border border-red-200 rounded-md">
+                        <p class="font-bold text-red-800 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            TAMPERED: Hash Mismatch Detected!
+                        </p>
+                        <p class="text-sm text-red-700 mt-2">
+                            The provided data does not match the original blockchain anchor record.
+                        </p>
+                    </div>
+
+                    <!-- Verified Score Details (Hidden by default) -->
+                    <div id="verified-details" class="hidden pt-4 border-t">
+                        <h4 class="font-semibold primary-text mb-1">Anchored TSI Score</h4>
+                        <p class="score-display text-4xl">84.5</p>
+                        <p class="text-sm text-gray-700 mt-2">
+                            **Auditor:** IT Expert Jane Doe (ID: 556)<br>
+                            **Assessment Date:** 2025-11-04<br>
+                            **Blockchain TXID:** `<span id="verified-txid" class="font-mono text-xs bg-gray-100 p-1 rounded">...</span>`
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- Simple JS Simulation -->
+<script>
+        function verifyTsiToken() {
+            const tokenId = document.getElementById('token-id').value.trim();
+            const statusMessage = document.getElementById('status-message');
+            const resultSuccess = document.getElementById('result-success');
+            const resultTampered = document.getElementById('result-tampered');
+            const verifiedDetails = document.getElementById('verified-details');
+            const verifiedTxid = document.getElementById('verified-txid');
+
+            // Reset UI
+            statusMessage.classList.remove('hidden');
+            statusMessage.textContent = 'Verifying with blockchain service...';
+            resultSuccess.classList.add('hidden');
+            resultTampered.classList.add('hidden');
+            verifiedDetails.classList.add('hidden');
+            verifiedTxid.textContent = '';
+
+            if (tokenId === '') {
+                statusMessage.textContent = 'Please enter a TSI Token ID or Transaction ID.';
+                return;
+            }
+
+            // Simple simulated API/Blockchain verification logic
+            // In a real application, this would be an AJAX call to the ExpressJS Middleware /verify endpoint
+            // The Middleware would query the blockchain using the TxID/Token ID and recalculate the hash
+            // of the presented data to check for a match.
+
+            setTimeout(() => {
+                statusMessage.classList.add('hidden');
+
+                // Simulation: Check if the input token ID is one of our simulated successful cases
+                if (tokenId.startsWith('TXID-VALID-') || tokenId.startsWith('MSME-0042')) {
+                    // Successful verification
+                    resultSuccess.classList.remove('hidden');
+                    verifiedDetails.classList.remove('hidden');
+
+                    // Display mock verified details
+                    document.querySelector('#result-success p.text-sm').textContent = `The TSI Score data for MSME-0042 is 100% verified and immutable.`;
+                    verifiedTxid.textContent = 'a1b2c3d4e5f67890abcdef1234567890';
+                    document.querySelector('#verified-details .score-display').textContent = '89.2';
+
+                } else if (tokenId.startsWith('TXID-TAMPERED-')) {
+                    // Failed verification simulation
+                    resultTampered.classList.remove('hidden');
+                } else {
+                     // Default failure case for unknown/invalid input
+                    resultTampered.classList.remove('hidden');
+                    document.querySelector('#result-tampered p.text-sm').textContent = `Verification failed. Token ID not found or invalid format.`;
+                }
+
+            }, 1500); // Simulate network latency
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TSI Stakeholder Registration</title>
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+        :root {
+            --tsi-primary: #006A67; /* Primary Dark Teal Color */
+            --background: #f4fbf9; /* Light, clean background */
+            --border-color: #D1D5DB; /* Light gray border */
+        }
+
+        body {
+            background-color: var(--background);
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .login-card {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            max-width: 768px; /* Wider card for registration form */
+        }
+
+        .primary-text { color: var(--tsi-primary); }
+
+        .input-style {
+            height: 40px;
+            border-color: var(--border-color);
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .input-style:focus {
+            outline: none;
+            border-color: var(--tsi-primary);
+            box-shadow: 0 0 0 1px var(--tsi-primary);
+        }
+
+        .animated-button {
+            background-color: var(--tsi-primary);
+            color: #FFFFFF;
+            transition: background-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        /* Custom styles for the active tab */
+        .tab-active {
+            border-bottom: 3px solid var(--tsi-primary);
+            color: var(--tsi-primary);
+            background-color: #f0fdfc; /* Subtle light teal background */
+            font-weight: 600;
+        }
+
+        .tab-button {
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-button:hover {
+            color: var(--tsi-primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card w-full p-8 md:p-12 bg-white rounded-xl border border-gray-200">
+
+  <!-- Header and Logo (TSI Branding) -->
+  <div class="text-center mb-6">
+    <!-- Replaced SVG with image logo -->
+    <img src="tsi.png" alt="TSI Logo" class="h-10 w-auto mx-auto" />
+    <span class="text-3xl font-bold primary-text block mt-2">TSI Ratings</span>
+  </div>
+
+  <!-- Registration Title -->
+  <h1 class="text-xl font-semibold text-gray-700 text-center">Register</h1>
+  <p class="text-gray-500 mb-8 text-center text-sm">Select your role to join the TSI Ratings System.</p>
+
+
+  <!-- User Type Selector (Tabs) -->
+  <div class="mb-8">
+    <div class="flex flex-wrap sm:flex-nowrap border-b border-gray-200">
+
+      <!-- MSME Owner -->
+      <button id="tab-msme"
+              onclick="selectUserType('msme')"
+              class="tab-button flex-1 min-w-[150px] flex items-center justify-center px-4 py-3 font-medium text-gray-600 rounded-t-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.83-7-7.93 0-.62.08-1.21.21-1.79l.54.54L9 11l-2.71-2.71-.54-.54C6.9 5.08 9.29 3 12 3c3.08 0 5.67 1.88 6.83 4.54L19.5 8.5l-2.09-.34-.91.56L15 8.1l-.9.55L13 8.32l-.9.56L11 8.86l-.9.55L9 8.64l-.9.55L7 8.16l-.9.55L5 8.3l-.9.56-.54.54C4.08 9.79 4 10.38 4 11c0 4.1 3.05 7.44 7 7.93v2.07h2v-2.07z"/></svg>
+        MSME Owner
+      </button>
+
+      <!-- IT Auditor -->
+      <button id="tab-auditor"
+              onclick="selectUserType('auditor')"
+              class="tab-button flex-1 min-w-[150px] flex items-center justify-center px-4 py-3 font-medium text-gray-600 rounded-t-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15.5V11h2v6.5h-2zM12 9c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>
+        IT Auditor
+      </button>
+
+      <!-- Lender -->
+      <button id="tab-lender"
+              onclick="selectUserType('lender')"
+              class="tab-button flex-1 min-w-[150px] flex items-center justify-center px-4 py-3 font-medium text-gray-600 rounded-t-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4V6h16v12zm-4-8h-3V7h-2v3H8v2h3v3h2v-3h3v-2z"/></svg>
+        Financial Institution
+      </button>
+    </div>
+  </div>
+
+  <!-- Registration Form -->
+  <form id="registration-form" class="space-y-6">
+
+    <!-- Name Input -->
+    <div>
+      <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+      <input type="text" id="name" name="name" required
+             class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="Your full name">
+    </div>
+
+    <!-- Email Input -->
+    <div>
+      <label for="email" class="block text-sm font-medium text-gray-700 mb-1" id="email-label">Business Email *</label>
+      <input type="email" id="email" name="email" required
+             class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="contact@example.com">
+    </div>
+
+    <!-- Dynamic Field Block -->
+    <div id="dynamic-fields" class="p-4 border border-gray-300 rounded-lg bg-gray-50 space-y-4">
+      <!-- Content injected by JavaScript based on user type -->
+    </div>
+
+    <!-- Password and Confirm Password -->
+    <div>
+      <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+      <input type="password" id="password" name="password" required
+             class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="Minimum 8 characters">
+    </div>
+    <div>
+      <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+      <input type="password" id="confirm-password" name="confirm-password" required
+             class="input-style w-full px-4 py-2 border rounded-lg shadow-sm">
+    </div>
+
+    <!-- Continue Button -->
+    <button type="submit"
+            class="animated-button w-full h-11 inline-flex items-center justify-center rounded-lg font-medium text-lg tracking-wide hover:opacity-90">
+      Register Account
+    </button>
+  </form>
+
+  <!-- Already have an account / Explore link -->
+  <div class="mt-8 text-center border-t pt-4">
+    <span class="text-gray-500 mr-2">Already have an account?</span>
+    <a href="login_otp_captcha.html" class="font-semibold primary-text hover:opacity-80 transition duration-150">Login</a>
+    <span class="text-gray-500 mx-2">|</span>
+    <a href="#" class="text-gray-500 hover:text-gray-700 transition duration-150">Explore Offerings</a>
+  </div>
+</div>
+
+<script>
+        // Default selection on load
+        document.addEventListener('DOMContentLoaded', () => {
+            selectUserType('msme');
+
+            // Add submit listener (for simulation)
+            document.getElementById('registration-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const userType = document.querySelector('.tab-active').id.replace('tab-', '');
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+
+                if (password.length < 8) {
+                    alert('Password must be at least 8 characters long.');
+                    return;
+                }
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match.');
+                    return;
+                }
+
+                alert(`Registration submitted for: ${userType.toUpperCase()} (Simulated).`);
+                // In a real app, successful registration would redirect to the login page or email verification page.
+            });
+        });
+
+        // Function to update the dynamic content and active tab
+        function selectUserType(type) {
+            const tabs = ['msme', 'auditor', 'lender'];
+            const dynamicFields = document.getElementById('dynamic-fields');
+
+            // Reset tab styles
+            tabs.forEach(t => {
+                const tabElement = document.getElementById(`tab-${t}`);
+                tabElement.classList.remove('tab-active');
+            });
+
+            // Set active tab style
+            document.getElementById(`tab-${type}`).classList.add('tab-active');
+
+            // Update Dynamic Form Fields
+            let htmlContent = '';
+            let emailLabelText = 'Email *';
+
+            if (type === 'msme') {
+                htmlContent = `
+                    <div>
+                        <label for="org-name" class="block text-sm font-medium text-gray-700 mb-1">MSME Business Name *</label>
+                        <input type="text" id="org-name" name="org-name" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., GreenTech Solutions Pvt. Ltd.">
+                    </div>
+                    <div>
+                        <label for="udyam" class="block text-sm font-medium text-gray-700 mb-1">Udyam Registration Number (Optional)</label>
+                        <input type="text" id="udyam" name="udyam" class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., UDYAM-XX-0000000">
+                    </div>
+                `;
+                emailLabelText = 'Business Email *';
+
+            } else if (type === 'auditor') {
+                htmlContent = `
+                    <div>
+                        <label for="firm-name" class="block text-sm font-medium text-gray-700 mb-1">Auditing Firm Name *</label>
+                        <input type="text" id="firm-name" name="firm-name" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., Tech Audit Consultants LLP">
+                    </div>
+                    <div>
+                        <label for="certification" class="block text-sm font-medium text-gray-700 mb-1">Certification/License Number *</label>
+                        <input type="text" id="certification" name="certification" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., ICAI/AICPA ID or Tech Certification">
+                    </div>
+                `;
+                emailLabelText = 'Professional Email *';
+            } else if (type === 'lender') {
+                htmlContent = `
+                    <div>
+                        <label for="bank-name" class="block text-sm font-medium text-gray-700 mb-1">Lending Institution Name *</label>
+                        <input type="text" id="bank-name" name="bank-name" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., ABC Bank or FinTech Credit Solutions">
+                    </div>
+                    <div>
+                        <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Your Role/Designation *</label>
+                        <input type="text" id="role" name="role" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., Senior Underwriter">
+                    </div>
+                `;
+                emailLabelText = 'Official Email *';
+            }
+
+            dynamicFields.innerHTML = htmlContent;
+            document.getElementById('email-label').textContent = emailLabelText;
+        }
+    </script>
+</body>
+</html>

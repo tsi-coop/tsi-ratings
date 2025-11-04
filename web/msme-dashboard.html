@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TSI Ratings | MSME Owner Dashboard</title>
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+        :root {
+            --tsi-primary: #006A67; /* Primary Dark Teal Color */
+            --background: #f4fbf9; /* Light, clean background */
+            --tsi-secondary: #00BFB2; /* Lighter teal for accents */
+        }
+
+        body {
+            background-color: var(--background);
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+
+        .primary-bg { background-color: var(--tsi-primary); }
+        .primary-text { color: var(--tsi-primary); }
+
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-active { background-color: #d1fae5; color: #059669; } /* Green for Active/Verified */
+        .status-pending { background-color: #fef3c7; color: #d97706; } /* Yellow for Pending */
+        .status-expired { background-color: #fee2e2; color: #ef4444; } /* Red for Expired */
+        .status-draft { background-color: #e0f2f1; color: var(--tsi-primary); } /* Teal for Draft/New */
+
+        .tsi-score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.25rem;
+            font-weight: bold;
+            color: white;
+            background: conic-gradient(var(--tsi-primary) 75%, #ccc 75%); /* Example score: 75% */
+        }
+
+        .tsi-score-inner {
+            background-color: white;
+            color: var(--tsi-primary);
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0, 106, 103, 0.2);
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+<div class="max-w-7xl mx-auto space-y-8">
+  <!-- Header -->
+  <header class="flex justify-between items-center py-4 px-6 bg-white rounded-lg shadow-md">
+    <div class="flex items-center">
+       <h1 class="text-3xl font-extrabold primary-text">MSME Console</h1>
+    </div>
+    <div class="flex items-center space-x-4">
+      <span class="text-lg font-medium text-gray-700">Shakti Textiles & Exports</span>
+      <button class="primary-bg text-white px-4 py-2 rounded-lg text-sm hover:bg-opacity-90 transition">
+        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Grid -->
+  <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <!-- Column 1: TSI Score and Verification -->
+    <div class="lg:col-span-2 space-y-8">
+
+      <!-- TSI Score Card -->
+      <div class="card">
+        <h2 class="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">My Current TSI Rating</h2>
+        <div class="flex items-center space-x-8">
+
+          <!-- Score Display -->
+          <div class="flex flex-col items-center">
+            <div class="tsi-score-circle" style="background: conic-gradient(var(--tsi-primary) 85%, #ccc 85%);">
+              <div class="tsi-score-inner">
+                <span class="text-2xl primary-text">85</span>
+                <span class="text-xs font-normal text-gray-500 mt-1">/100</span>
+              </div>
+            </div>
+            <p class="text-sm font-medium mt-3 text-gray-600">Last Verified Score</p>
+          </div>
+
+          <!-- Status and Action -->
+          <div>
+            <p class="text-3xl font-bold primary-text mb-2">TSI Score: A+</p>
+            <p class="text-lg text-gray-600 mb-4">Verification Status: <span class="status-badge status-active">Active (Verified on Blockchain)</span></p>
+
+            <div class="space-y-3">
+              <button onclick="generateQrCode()" class="primary-bg text-white px-6 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition shadow-md">
+                <i class="fas fa-qrcode mr-2"></i> Generate Verifiable QR Code
+              </button>
+              <p class="text-sm text-gray-500 max-w-sm">Use this QR code in loan applications. Lenders scan it to instantly verify your score against the immutable blockchain record.</p>
+
+              <div id="qr-code-display" class="hidden mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50 max-w-xs">
+                <img src="https://placehold.co/150x150/006A67/FFFFFF?text=TSI+QR+Code" alt="TSI QR Code Placeholder" class="mx-auto" />
+                <p class="text-center text-xs mt-2 text-gray-500">Scan to Verify: TXN #0x123...456</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Latest Audit Results -->
+      <div class="card">
+        <h2 class="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">DMA Section Scores</h2>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center text-sm font-medium">
+            <span class="text-gray-700"><i class="fas fa-chart-line primary-text mr-2"></i> S1: Digital Strategy & Leadership</span>
+            <span class="text-gray-800 font-bold">90%</span>
+          </div>
+          <div class="flex justify-between items-center text-sm font-medium">
+            <span class="text-gray-700"><i class="fas fa-cogs primary-text mr-2"></i> S2: Digital Operations & Processes</span>
+            <span class="text-gray-800 font-bold">85%</span>
+          </div>
+          <div class="flex justify-between items-center text-sm font-medium">
+            <span class="text-gray-700"><i class="fas fa-store primary-text mr-2"></i> S3: Digital Customer Experience & Marketing</span>
+            <span class="text-gray-800 font-bold">95%</span>
+          </div>
+          <div class="flex justify-between items-center text-sm font-medium">
+            <span class="text-gray-700"><i class="fas fa-database primary-text mr-2"></i> S4: Data & Analytics</span>
+            <span class="text-gray-800 font-bold">70%</span>
+          </div>
+          <div class="flex justify-between items-center text-sm font-medium">
+            <span class="text-gray-700"><i class="fas fa-shield-alt primary-text mr-2"></i> S5: Technology Infrastructure & Cybersecurity</span>
+            <span class="text-gray-800 font-bold">80%</span>
+          </div>
+          <div class="flex justify-between items-center text-sm font-medium">
+            <span class="text-gray-700"><i class="fas fa-users primary-text mr-2"></i> S6: Digital Skills & Culture</span>
+            <span class="text-gray-800 font-bold">88%</span>
+          </div>
+          <button class="mt-4 w-full border border-tsi-primary text-tsi-primary py-2 rounded-lg font-medium hover:bg-gray-50 transition">
+            Download Full Audit Report (PDF)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 2: Audit History and Actions -->
+    <div class="space-y-8">
+
+      <!-- Assessment Actions -->
+      <div class="card">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Assessment Timeline</h2>
+        <div class="flex items-center space-x-3 mb-4">
+          <span class="status-badge status-pending">Auditor Assigned</span>
+          <span class="text-sm text-gray-500">Pending assessment completion.</span>
+        </div>
+
+        <div class="space-y-4">
+          <button class="primary-bg text-white px-4 py-3 rounded-lg font-semibold w-full hover:bg-opacity-90 transition shadow-md">
+            <i class="fas fa-redo-alt mr-2"></i> Request New Audit
+          </button>
+          <p class="text-sm text-gray-500 text-center">Your current score expires in 180 days (May 1, 2026).</p>
+        </div>
+      </div>
+
+      <!-- Audit History -->
+      <div class="card">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Recent Audit History</h2>
+        <ul class="space-y-3">
+          <li class="p-3 border rounded-lg flex justify-between items-center hover:bg-gray-50 transition">
+            <div>
+              <p class="font-semibold text-gray-800">TSI Score: 85% (A+)</p>
+              <p class="text-xs text-gray-500">Completed: Oct 20, 2025</p>
+            </div>
+            <span class="status-badge status-active">Verified</span>
+          </li>
+          <li class="p-3 border rounded-lg flex justify-between items-center hover:bg-gray-50 transition">
+            <div>
+              <p class="font-semibold text-gray-800">TSI Score: 78% (B)</p>
+              <p class="text-xs text-gray-500">Completed: Oct 20, 2024</p>
+            </div>
+            <span class="status-badge status-expired">Expired</span>
+          </li>
+          <li class="p-3 border rounded-lg flex justify-between items-center hover:bg-gray-50 transition">
+            <div>
+              <p class="font-semibold text-gray-800">TSI Score: 62% (C-)</p>
+              <p class="text-xs text-gray-500">Completed: Oct 20, 2023</p>
+            </div>
+            <span class="status-badge status-expired">Expired</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+        function generateQrCode() {
+            const display = document.getElementById('qr-code-display');
+            display.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

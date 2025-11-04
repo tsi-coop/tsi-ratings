@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TSI Ratings | IT Auditor Dashboard</title>
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+        :root {
+            --tsi-primary: #006A67; /* Primary Dark Teal Color */
+            --background: #f4fbf9; /* Light, clean background */
+            --accent-green: #2ecc71;
+            --accent-yellow: #f39c12;
+            --accent-red: #e74c3c;
+        }
+
+        body {
+            background-color: var(--background);
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+
+        .primary-bg { background-color: var(--tsi-primary); }
+        .primary-text { color: var(--tsi-primary); }
+
+        .sidebar {
+            width: 280px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #4b5563;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .nav-item.active {
+            color: white;
+            background-color: var(--tsi-primary);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+  <!-- Lucide Icons -->
+  <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'tsi-primary': 'var(--tsi-primary)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="flex h-screen">
+
+<!-- Sidebar / Navigation -->
+<aside class="sidebar primary-bg flex flex-col p-4 text-white">
+  <div class="mb-8 p-2">
+    <span class="text-xl font-bold ml-3">TSI Ratings</span>
+  </div>
+
+  <nav class="flex-grow">
+    <a href="#" class="nav-item active">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Dashboard
+    </a>
+    <a href="#" class="nav-item">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Assessment
+    </a>
+    <a href="#" class="nav-item">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2z"/></svg>
+      Submitted Ratings
+    </a>
+    <a href="#" class="nav-item">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/></svg>
+      Profile & Certifications
+    </a>
+  </nav>
+
+  <div class="mt-8">
+    <a href="#" class="nav-item bg-red-600 hover:bg-red-700 text-white rounded-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M10 3H6a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Logout
+    </a>
+  </div>
+</aside>
+
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-8">
+  <header class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">IT Auditor Console</h1>
+    <p class="text-gray-500">Welcome, TSI Certified Auditor Alex Johnson. Your portfolio overview.</p>
+  </header>
+
+  <!-- Stats Grid -->
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <!-- Stat Card 1: Assessments Pending -->
+    <div class="card p-5 border-l-4 border-accent-yellow" style="--accent-yellow: #f39c12;">
+      <p class="text-sm font-medium text-gray-500">Assessments Pending</p>
+      <p class="text-3xl font-bold text-gray-900 mt-1">4</p>
+      <span class="text-xs text-accent-yellow" style="--accent-yellow: #f39912;">New assignments received</span>
+    </div>
+
+    <!-- Stat Card 2: Ratings Submitted -->
+    <div class="card p-5 border-l-4 border-accent-green" style="--accent-green: #2ecc71;">
+      <p class="text-sm font-medium text-gray-500">Ratings Submitted (YTD)</p>
+      <p class="text-3xl font-bold text-gray-900 mt-1">42</p>
+      <span class="text-xs text-accent-green" style="--accent-green: #2ecc71;">Blockchain anchored successfully</span>
+    </div>
+
+    <!-- Stat Card 3: Blockchain Anchor Status -->
+    <div class="card p-5 border-l-4 border-tsi-primary">
+      <p class="text-sm font-medium text-gray-500">Blockchain Sync Status</p>
+      <p class="text-3xl font-bold primary-text mt-1">Active</p>
+      <span class="text-xs primary-text">Last verified 1 min ago</span>
+    </div>
+  </section>
+
+  <!-- Pending Assessments Table -->
+  <section class="mb-10">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Assigned MSMEs Awaiting Audit</h2>
+    <div class="card overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+        <tr>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MSME Name</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sector</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Assigned</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+        </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+        <tr>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Shakti Textiles & Exports</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Manufacturing</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Oct 28, 2025</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
+            <a href="#" class="primary-text hover:underline">Start DMA</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">FutureSoft IT Solutions</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">IT Services</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Oct 25, 2025</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
+            <a href="#" class="primary-text hover:underline">Start DMA</a>
+          </td>
+        </tr>
+        <tr>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Coastal Logistics Hub</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Logistics</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Oct 20, 2025</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
+            <a href="#" class="primary-text hover:underline">Start DMA</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Quick Access / Notifications -->
+  <section>
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Action Card 1: Resources -->
+      <div class="card p-6">
+        <h3 class="text-lg font-semibold primary-text mb-2">Auditor Resources</h3>
+        <ul class="text-sm space-y-1 text-gray-600">
+          <li><a href="#" class="hover:underline">TSI DMA Handbook (v2.1)</a></li>
+          <li><a href="#" class="hover:underline">Blockchain Verification API Docs</a></li>
+          <li><a href="#" class="hover:underline">Training Modules: Digital Maturity Scoring</a></li>
+        </ul>
+      </div>
+
+      <!-- Action Card 2: Notifications -->
+      <div class="card p-6">
+        <h3 class="text-lg font-semibold primary-text mb-2">Recent Activity</h3>
+        <ul class="text-sm space-y-2">
+          <li class="flex justify-between items-center text-gray-700">
+            <span>New MSME assignment: **Kisan Agro**</span>
+            <span class="text-xs text-gray-500">2h ago</span>
+          </li>
+          <li class="flex justify-between items-center text-gray-700">
+            <span>Rating for **TechFibre** anchored successfully.</span>
+            <span class="text-xs text-gray-500">1d ago</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+</body>
+</html>
