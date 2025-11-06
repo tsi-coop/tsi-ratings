@@ -3,148 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TSI Ratings | Digital Operational Trust for MSMEs</title>
+  <title>TSI Ratings: Operational Trust & Tokenized Integrity</title>
   <!-- Load Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <style>
         :root {
             --tsi-primary: #006A67; /* Primary Dark Teal Color */
             --background: #f4fbf9; /* Light, clean background */
-            --highlight: #00a09c; /* Lighter teal for hover/accent */
+            --tsi-accent: #00BFB2; /* Lighter teal for accents */
         }
 
         body {
             background-color: var(--background);
             font-family: ui-sans-serif, system-ui, sans-serif;
-            color: #1f2937; /* Dark gray text */
         }
 
         .primary-bg { background-color: var(--tsi-primary); }
         .primary-text { color: var(--tsi-primary); }
-        .border-primary { border-color: var(--tsi-primary); }
 
-        .btn-primary {
+        .header-bg {
             background-color: var(--tsi-primary);
-            color: white;
-            transition: background-color 0.2s;
-        }
-        .btn-primary:hover {
-            background-color: var(--highlight);
+            background-image: linear-gradient(135deg, #006A67 0%, #00BFB2 100%);
         }
 
         .card {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s;
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            transition: transform 0.3s;
         }
         .card:hover {
-            transform: translateY(-2px);
-        }
-
-        .nav-link {
-            transition: color 0.2s;
-        }
-        .nav-link:hover {
-            color: var(--highlight);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.15);
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen">
 
-<!-- Navigation Bar -->
-<nav class="bg-white shadow-md">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-16">
-      <!-- Logo -->
-      <div class="flex-shrink-0 flex items-center">
-        <img src="tsi.png" alt="TSI Logo" class="h-8 w-auto mr-2" />
-        <span class="text-xl font-bold primary-text">TSI Ratings</span>
-      </div>
-
-      <!-- Desktop Links -->
-      <div class="flex space-x-6 items-center">
-        <a href="#about" class="text-gray-600 hover:text-gray-900 nav-link">About</a>
-        <a href="#benefits" class="text-gray-600 hover:text-gray-900 nav-link">Our Solution</a>
-
-        <a href="login_otp_captcha.html" class="text-gray-600 hover:text-gray-900 nav-link hidden sm:block">Login</a>
-
-        <a href="registration_v2.html" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium shadow-lg">
-          Register Now
-        </a>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<!-- Hero Section -->
-<header class="primary-bg text-white py-20">
-  <div class="max-w-7xl mx-auto px-4 text-center">
-    <h1 class="text-5xl md:text-6xl font-extrabold mb-4 leading-tight">
-      Trust by Technology. Credit by Confidence.
-    </h1>
-    <p class="text-xl opacity-90 mb-8 max-w-3xl mx-auto">
-      The TSI Ratings Platform converts an MSME's digital operational integrity into a **tokenized, tamper-proof score**, unlocking vital access to high-ticket financing.
+<!-- Header Section -->
+<header class="header-bg text-white py-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <!-- <img src="tsi.png" alt="TSI Logo" class="h-16 w-auto mx-auto mb-4 filter brightness-150" /> -->
+    <h1 class="text-5xl font-extrabold mb-3">TSI Ratings</h1>
+    <p class="text-xl font-light max-w-3xl mx-auto">
+      Transforming operational trust into verifiable digital collateral for the tokenisation economy
     </p>
-    <a href="registration_v2.html" class="btn-primary bg-white text-gray-900 font-bold px-8 py-3 text-lg rounded-xl shadow-2xl hover:bg-gray-100">
-      Get Started
-    </a>
-  </div>
-</header>
 
-<!-- Main Content: Solution Breakdown -->
-<main class="max-w-7xl mx-auto px-4 py-16">
-  <section id="benefits" class="text-center mb-16">
-    <h2 class="text-3xl font-bold primary-text mb-4">How TSI Ratings Works</h2>
-    <p class="text-xl text-gray-600">We replace financial ambiguity with verifiable operational trust.</p>
-  </section>
-
-  <div class="grid md:grid-cols-2 gap-8">
-
-    <!-- Card 1: Digital Maturity Assessment (DMA) -->
-    <div class="card bg-white p-8 rounded-xl border-l-4 border-primary">
-      <div class="primary-text text-3xl font-extrabold mb-3">1. DMA: Digital Maturity Assessment</div>
-      <h3 class="text-xl font-semibold mb-4">A Professional, Forward-Looking Audit</h3>
-      <p class="text-gray-700 mb-4">
-        The DMA provides the deep **operational metrics** that traditional lending lacks. Instead of just looking at historical profits, the DMA measures the MSME's resilience and efficiency.
-      </p>
-      <ul class="list-disc list-inside text-gray-600 space-y-2">
-        <li>**IT Expert Validation:** A certified auditor uses the platform to score digital adoption (e.g., cloud usage, e-invoicing, supply chain integration).</li>
-        <li>**Operational Effectiveness:** Scores reflect real-time business health, such as data quality, process automation, and security posture.</li>
-        <li>**The Score:** The final score is generated based on objective, standardized, and auditable data.</li>
-      </ul>
-    </div>
-
-    <!-- Card 2: Credit Model Augmentation (CMA) -->
-    <div class="card bg-white p-8 rounded-xl border-l-4 border-primary">
-      <div class="primary-text text-3xl font-extrabold mb-3">2. CMA: Credit Model Augmentation</div>
-      <h3 class="text-xl font-semibold mb-4">Tokenized Trust for Underwriting Confidence</h3>
-      <p class="text-gray-700 mb-4">
-        The CMA phase securely integrates the DMA score into the lender’s risk models, making it a reliable digital asset for high-ticket credit decisions.
-      </p>
-      <ul class="list-disc list-inside text-gray-600 space-y-2">
-        <li>**Tokenization & Blockchain Lock:** The DMA score is hashed and **tokenized**, locking the immutable record onto a secure blockchain ledger.</li>
-        <li>**Augments Collateral:** This verifiable digital asset supplements insufficient financial collateral, giving lenders the confidence to offer larger loans.</li>
-        <li>**Tamper-Proof Verification:** Lenders instantly verify the score's authenticity by scanning a **QR code**, eliminating fraud and speeding up the underwriting process.</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Call to Action Banner -->
-  <div class="mt-16 text-center">
-    <div class="bg-gray-800 text-white p-10 rounded-xl">
-      <h3 class="text-3xl font-bold mb-3">Join the Ecosystem of Trust</h3>
-      <p class="text-lg mb-6 opacity-80">Whether you're an MSME seeking credit or a lender seeking confidence, the future of finance is built on verifiable trust.</p>
-      <a href="registration_v2.html" class="btn-primary bg-primary-text text-white px-6 py-3 rounded-lg font-bold hover:bg-opacity-90 transition-colors">
-        Register as a Stakeholder
+    <!-- Call to Action -->
+    <div class="mt-8 space-x-4">
+      <a href="registration_v2.html"
+         class="border-2 border-yellow-500 text-yellow-600 px-8 py-3 rounded-lg font-bold text-lg hover:bg-white hover:text-tsi-primary transition duration-300">
+        Register
+      </a>
+      <a href="login_otp_captcha.html"
+         class="border-2 border-white text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-white hover:text-tsi-primary transition duration-300">
+        Login
       </a>
     </div>
   </div>
-</main>
+</header>
+
+<!-- Value Proposition Section -->
+<section class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <h2 class="text-3xl font-bold text-gray-800 text-center mb-12">How TSI Rating Creates Irrefutable Trust</h2>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <!-- Feature 1: Tokenization -->
+    <div class="card text-center border-t-4 border-tsi-accent">
+      <i class="fas fa-cubes text-4xl primary-text mb-4"></i>
+      <h3 class="text-xl font-semibold mb-3">Tokenized Integrity</h3>
+      <p class="text-gray-600">We convert expert-audited scores into verifiable digital assets (tokens), locking the data permanently onto the blockchain. This eliminates data tampering and fraud.</p>
+    </div>
+
+    <!-- Feature 2: High-Ticket Lending -->
+    <div class="card text-center border-t-4 border-yellow-500">
+      <i class="fas fa-hand-holding-usd text-4xl text-yellow-600 mb-4"></i>
+      <h3 class="text-xl font-semibold mb-3">Augmented Collateral</h3>
+      <p class="text-gray-600">The TSI token augments traditional collateral, giving lenders the operational assurance and verifiable proof required to confidently underwrite high-ticket MSME loans.</p>
+    </div>
+
+    <!-- Feature 3: Operational Innovation -->
+    <div class="card text-center border-t-4 border-indigo-500">
+      <i class="fas fa-cogs text-4xl text-indigo-600 mb-4"></i>
+      <h3 class="text-xl font-semibold mb-3">Operational Predictor</h3>
+      <p class="text-gray-600">Our score is a leading indicator of resilience. We measure an MSME's adoption of modern systems, directly reflecting their operational effectiveness and innovation.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Assessment Breakdown Section (DMA & CMA) -->
+<section class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-3xl font-bold text-gray-800 text-center mb-12">The Dual Assessment Framework</h2>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+      <!-- DMA Assessment -->
+      <div class="card border-l-4 border-tsi-primary">
+        <div class="flex items-center mb-4">
+          <i class="fas fa-laptop-code text-3xl primary-text mr-3"></i>
+          <h3 class="text-2xl font-bold primary-text">DMA: Digital Maturity Assessment (MSMEs)</h3>
+        </div>
+        <p class="text-gray-600 mb-4">
+          **Target:** Micro, Small, and Medium Enterprises (MSMEs).
+        </p>
+        <p class="text-gray-700">
+          The DMA is an IT Auditor-led audit of the MSME's internal systems, scoring their adoption of cloud, digital accounting, cybersecurity, and API integration. This score provides trust in the borrower's operational quality.
+        </p>
+      </div>
+
+      <!-- CMA Assessment -->
+      <div class="card border-l-4 border-purple-500">
+        <div class="flex items-center mb-4">
+          <i class="fas fa-graduation-cap text-3xl text-purple-600 mr-3"></i>
+          <h3 class="text-2xl font-bold text-purple-600">CMA: Capability Maturity Assessment (Tech Providers)</h3>
+        </div>
+        <p class="text-gray-600 mb-4">
+          Target: Technology Providers and Vendors serving MSMEs.
+        </p>
+        <p class="text-gray-700">
+          The CMA verifies the quality, security, and scalability of technology services (e.g., cloud platforms, specialized software) used by MSMEs. This score provides trust in the underlying technology ecosystem.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- Footer -->
-<footer class="bg-gray-900 text-white py-8 mt-16">
-  <div class="max-w-7xl mx-auto px-4 text-center text-sm opacity-75">
-    &copy; 2025 TSI Ratings Platform. All rights reserved. Blockchain Solutions for MSME Growth.
-  </div>
+<footer class="py-6 text-center text-sm text-gray-500">
+  &copy; 2025 TSI Tech Solutions Cooperative Foundation.
 </footer>
+
 </body>
 </html>

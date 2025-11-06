@@ -4,18 +4,29 @@
 -- CREATE EXTENSION IF NOT EXISTS citext;
 
 ---
--- 1. User Table (Stores credentials and professional identity for all stakeholders)
+-- 1. User Table (Stores credentials, professional identity, and OTP state)
 ---
 CREATE TABLE "User" (
     "userId" BIGSERIAL PRIMARY KEY,
     "email" VARCHAR(255) NOT NULL UNIQUE,
     "passwordHash" VARCHAR(255) NOT NULL,
-    "role" VARCHAR(50) NOT NULL CHECK ("role" IN ('MSME_OWNER', 'IT_AUDITOR', 'LENDER')),
+    "role" VARCHAR(50) NOT NULL CHECK ("role" IN ('ADMIN', 'MSME_OWNER', 'IT_AUDITOR', 'FIN_PARTNER')),
+
+    -- New Professional Identity Fields
     "one_liner" VARCHAR(255),
     "linkedin" VARCHAR(255),
+
+    -- Fields required for Email OTP Login Flow
+    "otpCode" VARCHAR(6),
+    "otpExpiry" TIMESTAMP WITH TIME ZONE,
+
+    -- Audit Fields
+    "last_login_at" TIMESTAMP WITH TIME ZONE,
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Index for efficient email lookup during login/OTP request
+CREATE UNIQUE INDEX idx_user_email ON "User" ("email");
 -- Index for efficient role-based queries
 CREATE INDEX idx_user_role ON "User" ("role");
 
