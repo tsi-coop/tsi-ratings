@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TSI Stakeholder Registration</title>
-  <!-- Load Tailwind CSS -->
+  <title>TSI Stakeholder Self-Registration</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
         :root {
@@ -74,23 +73,18 @@
 
 <div class="login-card w-full p-8 md:p-12 bg-white rounded-xl border border-gray-200">
 
-  <!-- Header and Logo (TSI Branding) -->
   <div class="text-center mb-6">
-    <!-- Replaced SVG with image logo -->
     <img src="tsi.png" alt="TSI Logo" class="h-10 w-auto mx-auto" />
     <span class="text-3xl font-bold primary-text block mt-2">TSI Ratings</span>
   </div>
 
-  <!-- Registration Title -->
-  <h1 class="text-xl font-semibold text-gray-700 text-center">Register</h1>
-  <p class="text-gray-500 mb-8 text-center text-sm">Select your role to join the TSI Ratings System.</p>
+  <h1 class="text-xl font-semibold text-gray-700 text-center" id="registration-title">Register: Step 1 of 2</h1>
+  <p class="text-gray-500 mb-8 text-center text-sm" id="registration-subtitle">Select your role and provide your professional details.</p>
 
 
-  <!-- User Type Selector (Tabs) -->
-  <div class="mb-8">
+  <div class="mb-8" id="role-selector">
     <div class="flex flex-wrap sm:flex-nowrap border-b border-gray-200">
 
-      <!-- MSME Owner -->
       <button id="tab-msme"
               onclick="selectUserType('msme')"
               class="tab-button flex-1 min-w-[150px] flex items-center justify-center px-4 py-3 font-medium text-gray-600 rounded-t-lg">
@@ -98,7 +92,6 @@
         MSME Owner
       </button>
 
-      <!-- IT Auditor -->
       <button id="tab-auditor"
               onclick="selectUserType('auditor')"
               class="tab-button flex-1 min-w-[150px] flex items-center justify-center px-4 py-3 font-medium text-gray-600 rounded-t-lg">
@@ -106,7 +99,6 @@
         IT Auditor
       </button>
 
-      <!-- Lender -->
       <button id="tab-lender"
               onclick="selectUserType('lender')"
               class="tab-button flex-1 min-w-[150px] flex items-center justify-center px-4 py-3 font-medium text-gray-600 rounded-t-lg">
@@ -116,79 +108,79 @@
     </div>
   </div>
 
-  <!-- Registration Form -->
   <form id="registration-form" class="space-y-6">
 
-    <!-- Name Input -->
-    <div>
-      <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-      <input type="text" id="name" name="name" required
-             class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="Your full name">
+    <div id="step-one">
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+        <input type="text" id="name" name="name" required
+               class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="Your full name">
+      </div>
+
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1" id="email-label">Business Email *</label>
+        <input type="email" id="email" name="email" required
+               class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="contact@example.com">
+      </div>
+
+      <div id="dynamic-fields" class="p-4 border border-gray-300 rounded-lg bg-gray-50 space-y-4">
+      </div>
+
+      <button type="button" id="next-step-button" onclick="handleStepOne()"
+              class="animated-button w-full h-11 mt-6 inline-flex items-center justify-center rounded-lg font-medium text-lg tracking-wide hover:opacity-90">
+        Next: Verify Email
+      </button>
     </div>
 
-    <!-- Email Input -->
-    <div>
-      <label for="email" class="block text-sm font-medium text-gray-700 mb-1" id="email-label">Business Email *</label>
-      <input type="email" id="email" name="email" required
-             class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="contact@example.com">
-    </div>
 
-    <!-- Dynamic Field Block -->
-    <div id="dynamic-fields" class="p-4 border border-gray-300 rounded-lg bg-gray-50 space-y-4">
-      <!-- Content injected by JavaScript based on user type -->
-    </div>
+    <div id="step-two" class="hidden space-y-6">
+      <div class="text-center p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800">
+        A 6-digit verification code has been sent to <strong id="sent-email-display"></strong>.
+        It is valid for 5 minutes.
+      </div>
+      <div>
+        <label for="otp" class="block text-sm font-medium text-gray-700 mb-1">Enter 6-digit OTP *</label>
+        <input type="text" id="otp" name="otp" minlength="6" maxlength="6" pattern="\d{6}"
+               class="input-style w-full px-4 py-2 border rounded-lg shadow-sm text-center tracking-widest font-mono text-xl" placeholder="••••••">
+      </div>
 
-    <!-- Password and Confirm Password -->
-    <div>
-      <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-      <input type="password" id="password" name="password" required
-             class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="Minimum 8 characters">
-    </div>
-    <div>
-      <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
-      <input type="password" id="confirm-password" name="confirm-password" required
-             class="input-style w-full px-4 py-2 border rounded-lg shadow-sm">
-    </div>
+      <button type="submit" id="register-button"
+              class="animated-button w-full h-11 inline-flex items-center justify-center rounded-lg font-medium text-lg tracking-wide hover:opacity-90">
+        Complete Registration
+      </button>
 
-    <!-- Continue Button -->
-    <button type="submit"
-            class="animated-button w-full h-11 inline-flex items-center justify-center rounded-lg font-medium text-lg tracking-wide hover:opacity-90">
-      Register Account
-    </button>
+      <div class="flex justify-between text-sm mt-4">
+        <button type="button" onclick="handleResendOtp()" class="primary-text hover:opacity-80 transition duration-150 font-medium">Resend Code</button>
+        <button type="button" onclick="handleStepBack()" class="text-gray-500 hover:text-gray-700 transition duration-150">← Back to Details</button>
+      </div>
+    </div>
   </form>
 
-  <!-- Already have an account / Explore link -->
   <div class="mt-8 text-center border-t pt-4">
     <span class="text-gray-500 mr-2">Already have an account?</span>
-    <a href="login_otp_captcha.html" class="font-semibold primary-text hover:opacity-80 transition duration-150">Login</a>
+    <a href="login.html" class="font-semibold primary-text hover:opacity-80 transition duration-150">Login</a>
+    <a href="login.html" class="font-semibold primary-text hover:opacity-80 transition duration-150">Login</a>
     <span class="text-gray-500 mx-2">|</span>
     <a href="#" class="text-gray-500 hover:text-gray-700 transition duration-150">Explore Offerings</a>
   </div>
 </div>
 
 <script>
+        // Global state for registration
+        let registrationData = {};
+        const otpInput = document.getElementById('otp'); // Get OTP input element once
+
         // Default selection on load
         document.addEventListener('DOMContentLoaded', () => {
-            selectUserType('msme');
+            selectUserType('msme'); // Initialize with MSME selected
 
-            // Add submit listener (for simulation)
+            // Ensure OTP field is NOT required on initial load (Step 1 is visible)
+            otpInput.removeAttribute('required');
+
+            // Step 2 Submission Listener (Final Registration)
             document.getElementById('registration-form').addEventListener('submit', function(e) {
                 e.preventDefault();
-                const userType = document.querySelector('.tab-active').id.replace('tab-', '');
-                const password = document.getElementById('password').value;
-                const confirmPassword = document.getElementById('confirm-password').value;
-
-                if (password.length < 8) {
-                    alert('Password must be at least 8 characters long.');
-                    return;
-                }
-                if (password !== confirmPassword) {
-                    alert('Passwords do not match.');
-                    return;
-                }
-
-                alert(`Registration submitted for: ${userType.toUpperCase()} (Simulated).`);
-                // In a real app, successful registration would redirect to the login page or email verification page.
+                handleStepTwo();
             });
         });
 
@@ -205,6 +197,9 @@
 
             // Set active tab style
             document.getElementById(`tab-${type}`).classList.add('tab-active');
+
+            // Store selected role
+            registrationData.role = type;
 
             // Update Dynamic Form Fields
             let htmlContent = '';
@@ -242,8 +237,8 @@
                         <input type="text" id="bank-name" name="bank-name" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., ABC Bank or FinTech Credit Solutions">
                     </div>
                     <div>
-                        <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Your Role/Designation *</label>
-                        <input type="text" id="role" name="role" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., Senior Underwriter">
+                        <label for="role-designation" class="block text-sm font-medium text-gray-700 mb-1">Your Role/Designation *</label>
+                        <input type="text" id="role-designation" name="role-designation" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., Senior Underwriter">
                     </div>
                 `;
                 emailLabelText = 'Official Email *';
@@ -251,6 +246,105 @@
 
             dynamicFields.innerHTML = htmlContent;
             document.getElementById('email-label').textContent = emailLabelText;
+        }
+
+        // --- Step 1 Handler: Collect Info & Request OTP ---
+        function handleStepOne() {
+            const form = document.getElementById('registration-form');
+
+            // 1. Temporarily remove 'required' from the hidden OTP field
+            otpInput.removeAttribute('required');
+
+            // 2. Basic Form Validation for Step 1 fields
+            if (!form.checkValidity()) {
+                // If validation fails, report on visible fields.
+                // Re-add 'required' to OTP before returning (safer state management)
+                otpInput.setAttribute('required', 'required');
+                form.reportValidity();
+                return;
+            }
+
+            // 3. Collect all data from step 1 (assuming validation passed)
+            const email = document.getElementById('email').value;
+            const fullName = document.getElementById('name').value;
+
+            registrationData = {
+                ...registrationData,
+                email: email,
+                fullName: fullName,
+                // Dynamic fields collection
+                ...(registrationData.role === 'msme' && {
+                    companyName: document.getElementById('org-name').value,
+                    udyamRegistrationNo: document.getElementById('udyam').value
+                }),
+                ...(registrationData.role === 'auditor' && {
+                    firmName: document.getElementById('firm-name').value,
+                    certification: document.getElementById('certification').value
+                }),
+                ...(registrationData.role === 'lender' && {
+                    bankName: document.getElementById('bank-name').value,
+                    roleDesignation: document.getElementById('role-designation').value
+                }),
+            };
+
+            // 4. Re-add 'required' to the OTP field *before* showing Step 2
+            otpInput.setAttribute('required', 'required');
+
+            // SIMULATION of request_otp API call
+            console.log('Simulating OTP Request with:', { email: email });
+
+            // Frontend transition to Step 2
+            document.getElementById('role-selector').classList.add('hidden');
+            document.getElementById('step-one').classList.add('hidden');
+            document.getElementById('step-two').classList.remove('hidden');
+
+            document.getElementById('registration-title').textContent = 'Verify Email: Step 2 of 2';
+            document.getElementById('registration-subtitle').textContent = `Please enter the code sent to ${email} to proceed.`;
+            document.getElementById('sent-email-display').textContent = email;
+
+            // Focus on OTP input
+            otpInput.focus();
+
+            alert(`SIMULATION: OTP requested for ${email}. Transitioning to OTP entry. (Role: ${registrationData.role.toUpperCase()})`);
+        }
+
+        // --- Step 2 Handler: Verify OTP & Finalize Registration ---
+        function handleStepTwo() {
+            const otp = otpInput.value;
+            if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+                alert('Please enter a valid 6-digit OTP.');
+                return;
+            }
+
+            // SIMULATION of register_user_with_otp API call
+            console.log('Simulating Final Registration with:', { ...registrationData, otp: otp });
+
+            // Successful registration simulation
+            alert(`SUCCESS: Account for ${registrationData.email} registered successfully (Simulated). Redirecting to login page.`);
+
+            // In a real app, redirect after successful registration
+            window.location.href = 'login.html';
+        }
+
+        // --- Utility Handlers ---
+        function handleResendOtp() {
+             // SIMULATION of resending OTP
+             alert(`SIMULATION: New OTP requested and sent to ${registrationData.email}. (Valid for 5 minutes)`);
+             // In a real app, call the OTP request API again
+        }
+
+        function handleStepBack() {
+            // 1. Remove 'required' from the OTP field since Step 2 will be hidden
+            otpInput.removeAttribute('required');
+
+            // Transition back to Step 1
+            document.getElementById('role-selector').classList.remove('hidden');
+            document.getElementById('step-one').classList.remove('hidden');
+            document.getElementById('step-two').classList.add('hidden');
+
+            document.getElementById('registration-title').textContent = 'Register: Step 1 of 2';
+            document.getElementById('registration-subtitle').textContent = 'Select your role and provide your professional details.';
+            otpInput.value = ''; // Clear OTP input
         }
     </script>
 </body>
