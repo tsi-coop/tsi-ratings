@@ -9,8 +9,7 @@
 CREATE TABLE "User" (
     "userId" BIGSERIAL PRIMARY KEY,
     "email" VARCHAR(255) NOT NULL UNIQUE,
-    "passwordHash" VARCHAR(255) NOT NULL,
-    "role" VARCHAR(50) NOT NULL CHECK ("role" IN ('ADMIN', 'MSME_OWNER', 'IT_AUDITOR', 'FIN_PARTNER')),
+    "role" VARCHAR(50) NOT NULL CHECK ("role" IN ('admin', 'msme', 'auditor', 'lender')),
 
     -- New Professional Identity Fields
     "one_liner" VARCHAR(255),

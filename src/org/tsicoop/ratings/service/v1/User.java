@@ -116,7 +116,6 @@ public class User implements Action {
                 case "register_user":
                     // NOTE: In a real system, an authorization check must happen here to ensure only ADMIN can call this.
                     String email = (String) input.get("email");
-                    String password = (String) input.get("password");
                     String contactName = (String) input.get("contactName");
                     String oneLiner = (String) input.get("one_liner");
                     String linkedin = (String) input.get("linkedin");
@@ -124,13 +123,13 @@ public class User implements Action {
                     String udyamRegistrationNo = (String) input.get("udyamRegistrationNo");
                     String industrySector = (String) input.get("industrySector");
 
-                    if (role == null || role.isEmpty() || email == null || email.isEmpty() || password == null || password.isEmpty() || contactName == null || contactName.isEmpty()) {
+                    if (role == null || role.isEmpty() || email == null || email.isEmpty() || contactName == null || contactName.isEmpty()) {
                         OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required fields (email, password, role, contactName).", req.getRequestURI());
                         return;
                     }
 
                     // Validate common input
-                    String validationError = validateUserCreationInput(email, password);
+                    String validationError = validateUserCreationInput(email);
                     if (validationError != null) {
                         OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", validationError, req.getRequestURI());
                         return;
@@ -141,7 +140,7 @@ public class User implements Action {
                         return;
                     }
 
-                    output = registerUserToDb(role, email, password, contactName, companyName, udyamRegistrationNo, industrySector, oneLiner, linkedin);
+                    output = registerUserToDb(role, email, contactName, companyName, udyamRegistrationNo, industrySector, oneLiner, linkedin);
                     OutputProcessor.send(res, HttpServletResponse.SC_CREATED, output);
                     break;
 
@@ -194,7 +193,7 @@ public class User implements Action {
         String otp = String.format("%06d", new Random().nextInt(1000000));
 
         // Update SQL to store OTP and set expiry (PostgreSQL interval syntax)
-        String updateSql = "UPDATE \"User\" SET \"otpCode\" = ?, \"otpExpiry\" = NOW() + INTERVAL '5 minutes' WHERE email = ? RETURNING \"userId\"";
+        String updateSql = "UPDATE \"User\" SET \"otpCode\" = ?, \"otpExpiry\" = NOW() + INTERVAL '5 minutes' WHERE email = ?";
 
         try {
             conn = pool.getConnection();
@@ -203,24 +202,16 @@ public class User implements Action {
             pstmt = conn.prepareStatement(updateSql);
             pstmt.setString(1, otp);
             pstmt.setString(2, email);
+            pstmt.executeUpdate();
 
-            int affectedRows = pstmt.executeUpdate();
+            // User exists and OTP/Expiry were updated
+            // --- To do: Call EmailService.sendOtp(email, otp); would happen here ---
 
-            if (affectedRows > 0) {
-                // User exists and OTP/Expiry were updated
-                // --- SIMULATION: In a real app, EmailService.sendOtp(email, otp); would happen here ---
+            result.put("success", true);
+            result.put("message", "OTP generated and sent to " + email);
+            // NOTE: For demonstration purposes, we return the OTP. REMOVE IN PRODUCTION!
+            result.put("debug_otp", otp);
 
-                result.put("success", true);
-                result.put("message", "OTP generated and sent to " + email);
-                // NOTE: For demonstration purposes, we return the OTP. REMOVE IN PRODUCTION!
-                result.put("debug_otp", otp);
-            } else {
-                // User not found
-                result.put("error", true);
-                result.put("status_code", (long)HttpServletResponse.SC_NOT_FOUND);
-                result.put("error_message", "User not found.");
-                result.put("error_details", "No account registered with that email address.");
-            }
         } finally {
             pool.cleanup(null, pstmt, conn);
         }
@@ -331,7 +322,7 @@ public class User implements Action {
      * Registers a new user (Admin-only function) and handles associated MSME data if applicable.
      */
     private JSONObject registerUserToDb(
-            String role, String email, String password, String contactName,
+            String role, String email, String contactName,
             String companyName, String udyamRegistrationNo, String industrySector,
             String oneLiner, String linkedin) throws SQLException {
 
@@ -343,10 +334,8 @@ public class User implements Action {
         JSONObject output = new JSONObject();
         Long newUserId = null;
 
-        String hashedPassword = passwordHasher.hashPassword(password);
-
         // 1. Insert into User Table
-        String sqlUser = "INSERT INTO \"User\" (\"email\", \"passwordHash\", \"role\", \"one_liner\", \"linkedin\") VALUES (?, ?, ?, ?, ?) RETURNING \"userId\"";
+        String sqlUser = "INSERT INTO \"User\" (\"email\", \"role\", \"one_liner\", \"linkedin\") VALUES (?, ?, ?, ?) RETURNING \"userId\"";
 
         try {
             conn = pool.getConnection();
@@ -354,16 +343,15 @@ public class User implements Action {
 
             pstmtUser = conn.prepareStatement(sqlUser, Statement.RETURN_GENERATED_KEYS);
             pstmtUser.setString(1, email);
-            pstmtUser.setString(2, hashedPassword);
-            pstmtUser.setString(3, role);
+            pstmtUser.setString(2, role);
 
             // Set optional professional fields (only relevant for Auditor/Lender)
-            if ("IT_AUDITOR".equals(role) || "LENDER".equals(role) || "ADMIN".equals(role)) {
-                pstmtUser.setString(4, oneLiner);
-                pstmtUser.setString(5, linkedin);
+            if ("IT_AUDITOR".equals(role) || "FIN_PARTNER".equals(role) || "ADMIN".equals(role)) {
+                pstmtUser.setString(3, oneLiner);
+                pstmtUser.setString(4, linkedin);
             } else {
+                pstmtUser.setNull(3, java.sql.Types.VARCHAR);
                 pstmtUser.setNull(4, java.sql.Types.VARCHAR);
-                pstmtUser.setNull(5, java.sql.Types.VARCHAR);
             }
 
             int affectedRows = pstmtUser.executeUpdate();
@@ -467,12 +455,9 @@ public class User implements Action {
     /**
      * Validates the input for user creation/update.
      */
-    private String validateUserCreationInput(String email, String password) {
+    private String validateUserCreationInput(String email) {
         if (email != null && !EMAIL_PATTERN.matcher(email).matches()) {
             return "Invalid email format.";
-        }
-        if (password != null && !PASSWORD_PATTERN.matcher(password).matches()) {
-            return "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.";
         }
         return null; // Input is valid
     }

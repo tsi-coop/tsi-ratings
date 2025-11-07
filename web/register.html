@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TSI Stakeholder Self-Registration</title>
+  <title>TSI Ratings - Stakeholder Self-Registration</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
         :root {
@@ -154,11 +154,13 @@
         <button type="button" onclick="handleStepBack()" class="text-gray-500 hover:text-gray-700 transition duration-150">← Back to Details</button>
       </div>
     </div>
+
+    <div id="alert-container" class="mt-4 min-h-[40px] transition-opacity duration-300">
+    </div>
   </form>
 
   <div class="mt-8 text-center border-t pt-4">
     <span class="text-gray-500 mr-2">Already have an account?</span>
-    <a href="login.html" class="font-semibold primary-text hover:opacity-80 transition duration-150">Login</a>
     <a href="login.html" class="font-semibold primary-text hover:opacity-80 transition duration-150">Login</a>
     <span class="text-gray-500 mx-2">|</span>
     <a href="#" class="text-gray-500 hover:text-gray-700 transition duration-150">Explore Offerings</a>
@@ -166,18 +168,65 @@
 </div>
 
 <script>
+        // --- API Endpoint Definition ---
+        const API_URL = '/api/v1/user';
+
         // Global state for registration
         let registrationData = {};
-        const otpInput = document.getElementById('otp'); // Get OTP input element once
+        const otpInput = document.getElementById('otp');
+        const alertContainer = document.getElementById('alert-container');
+
+        /**
+         * Displays a formatted alert message at the bottom of the form.
+         * @param {string} message - The text content of the alert.
+         * @param {string} type - 'success', 'error', or 'info'.
+         */
+        function showAlert(message, type) {
+            let bgColor, textColor, borderColor;
+
+            if (type === 'success') {
+                bgColor = 'bg-green-100';
+                textColor = 'text-green-800';
+                borderColor = 'border-green-500';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-100';
+                textColor = 'text-red-800';
+                borderColor = 'border-red-500';
+            } else {
+                bgColor = 'bg-blue-100';
+                textColor = 'text-blue-800';
+                borderColor = 'border-blue-500';
+            }
+
+            const alertHtml = `
+                <div class="p-3 border-l-4 ${borderColor} ${bgColor} ${textColor} rounded-md shadow-sm opacity-0 animate-fadeIn" role="alert">
+                    <p class="font-medium">${message}</p>
+                </div>
+            `;
+
+            if (alertContainer.timeoutId) {
+                clearTimeout(alertContainer.timeoutId);
+            }
+            alertContainer.innerHTML = alertHtml;
+            setTimeout(() => {
+                alertContainer.querySelector('div').classList.remove('opacity-0');
+            }, 10);
+
+            alertContainer.timeoutId = setTimeout(() => {
+                const alertElement = alertContainer.querySelector('div');
+                if (alertElement) {
+                     alertElement.classList.add('opacity-0');
+                     setTimeout(() => {
+                         alertContainer.innerHTML = '';
+                     }, 300);
+                }
+            }, 5000);
+        }
 
         // Default selection on load
         document.addEventListener('DOMContentLoaded', () => {
-            selectUserType('msme'); // Initialize with MSME selected
-
-            // Ensure OTP field is NOT required on initial load (Step 1 is visible)
+            selectUserType('msme');
             otpInput.removeAttribute('required');
-
-            // Step 2 Submission Listener (Final Registration)
             document.getElementById('registration-form').addEventListener('submit', function(e) {
                 e.preventDefault();
                 handleStepTwo();
@@ -189,19 +238,12 @@
             const tabs = ['msme', 'auditor', 'lender'];
             const dynamicFields = document.getElementById('dynamic-fields');
 
-            // Reset tab styles
             tabs.forEach(t => {
-                const tabElement = document.getElementById(`tab-${t}`);
-                tabElement.classList.remove('tab-active');
+                document.getElementById(`tab-${t}`).classList.remove('tab-active');
             });
-
-            // Set active tab style
             document.getElementById(`tab-${type}`).classList.add('tab-active');
-
-            // Store selected role
             registrationData.role = type;
 
-            // Update Dynamic Form Fields
             let htmlContent = '';
             let emailLabelText = 'Email *';
 
@@ -217,7 +259,6 @@
                     </div>
                 `;
                 emailLabelText = 'Business Email *';
-
             } else if (type === 'auditor') {
                 htmlContent = `
                     <div>
@@ -246,105 +287,205 @@
 
             dynamicFields.innerHTML = htmlContent;
             document.getElementById('email-label').textContent = emailLabelText;
+            alertContainer.innerHTML = '';
         }
 
-        // --- Step 1 Handler: Collect Info & Request OTP ---
-        function handleStepOne() {
+        // --- Step 1 Handler: Collect Info & Request OTP (API Call) ---
+        async function handleStepOne() {
             const form = document.getElementById('registration-form');
+            alertContainer.innerHTML = '';
 
-            // 1. Temporarily remove 'required' from the hidden OTP field
             otpInput.removeAttribute('required');
 
-            // 2. Basic Form Validation for Step 1 fields
             if (!form.checkValidity()) {
-                // If validation fails, report on visible fields.
-                // Re-add 'required' to OTP before returning (safer state management)
                 otpInput.setAttribute('required', 'required');
                 form.reportValidity();
                 return;
             }
 
-            // 3. Collect all data from step 1 (assuming validation passed)
+            // Disable button during fetch
+            const nextButton = document.getElementById('next-step-button');
+            nextButton.disabled = true;
+            nextButton.textContent = 'Sending Code...';
+
+
+            // 3. Collect all data
             const email = document.getElementById('email').value;
             const fullName = document.getElementById('name').value;
 
+            // Prepare common data structure
             registrationData = {
-                ...registrationData,
+                role: registrationData.role,
                 email: email,
-                fullName: fullName,
-                // Dynamic fields collection
-                ...(registrationData.role === 'msme' && {
-                    companyName: document.getElementById('org-name').value,
-                    udyamRegistrationNo: document.getElementById('udyam').value
-                }),
-                ...(registrationData.role === 'auditor' && {
-                    firmName: document.getElementById('firm-name').value,
-                    certification: document.getElementById('certification').value
-                }),
-                ...(registrationData.role === 'lender' && {
-                    bankName: document.getElementById('bank-name').value,
-                    roleDesignation: document.getElementById('role-designation').value
-                }),
+                contactName: fullName,
+                // These are placeholders for Auditor/Lender data that would map to User fields like one_liner/linkedin
+                one_liner: null,
+                linkedin: null,
+
+                // Fields specific to MSME (mapped to the MSME table)
+                companyName: null,
+                udyamRegistrationNo: null,
+                industrySector: 'Not Specified', // Default for now
             };
 
-            // 4. Re-add 'required' to the OTP field *before* showing Step 2
-            otpInput.setAttribute('required', 'required');
+            // Enhance data based on role
+            if (registrationData.role === 'msme') {
+                registrationData.companyName = document.getElementById('org-name').value;
+                registrationData.udyamRegistrationNo = document.getElementById('udyam').value;
+                // Note: industrySector is missing from the form, defaulting above.
+            } else if (registrationData.role === 'auditor') {
+                // Mapping firm name and certification to generic professional fields for simplicity
+                registrationData.one_liner = document.getElementById('firm-name').value;
+                registrationData.linkedin = document.getElementById('certification').value;
+            } else if (registrationData.role === 'lender') {
+                // Mapping bank name and role designation to generic professional fields for simplicity
+                registrationData.one_liner = document.getElementById('bank-name').value;
+                registrationData.linkedin = document.getElementById('role-designation').value;
+            }
 
-            // SIMULATION of request_otp API call
-            console.log('Simulating OTP Request with:', { email: email });
+            // --- API CALL 1: Request OTP ---
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        _func: 'request_otp', // Function defined in User.java
+                        email: email
+                    })
+                });
 
-            // Frontend transition to Step 2
-            document.getElementById('role-selector').classList.add('hidden');
-            document.getElementById('step-one').classList.add('hidden');
-            document.getElementById('step-two').classList.remove('hidden');
+                const data = await response.json();
 
-            document.getElementById('registration-title').textContent = 'Verify Email: Step 2 of 2';
-            document.getElementById('registration-subtitle').textContent = `Please enter the code sent to ${email} to proceed.`;
-            document.getElementById('sent-email-display').textContent = email;
+                if (response.ok && data.success) {
+                    // Success: Transition to Step 2
 
-            // Focus on OTP input
-            otpInput.focus();
+                    // Re-add 'required' to the OTP field *before* showing Step 2
+                    otpInput.setAttribute('required', 'required');
 
-            alert(`SIMULATION: OTP requested for ${email}. Transitioning to OTP entry. (Role: ${registrationData.role.toUpperCase()})`);
+                    document.getElementById('role-selector').classList.add('hidden');
+                    document.getElementById('step-one').classList.add('hidden');
+                    document.getElementById('step-two').classList.remove('hidden');
+
+                    document.getElementById('registration-title').textContent = 'Verify Email: Step 2 of 2';
+                    document.getElementById('registration-subtitle').textContent = `Please enter the code sent to ${email} to proceed.`;
+                    document.getElementById('sent-email-display').textContent = email;
+                    otpInput.focus();
+
+                    showAlert(`Verification code sent to ${email}.`, 'success');
+
+                    // NOTE: If debug_otp is returned by the server (as in User.java), you can log it here:
+                    if (data.debug_otp) {
+                        console.log('DEBUG OTP:', data.debug_otp);
+                    }
+                } else {
+                    // API Error or User Not Found (even if request_otp finds the user, we assume in a real flow it might reject certain emails)
+                    const errorMsg = data.error_details || data.error_message || 'Could not send OTP. Please check your email.';
+                    showAlert(errorMsg, 'error');
+                    otpInput.setAttribute('required', 'required'); // Keep fields ready for re-validation
+                }
+            } catch (error) {
+                showAlert('Network error: Could not connect to the server.', 'error');
+                otpInput.setAttribute('required', 'required');
+            } finally {
+                // Re-enable button
+                nextButton.disabled = false;
+                nextButton.textContent = 'Next: Verify Email';
+            }
         }
 
-        // --- Step 2 Handler: Verify OTP & Finalize Registration ---
-        function handleStepTwo() {
+        // --- Step 2 Handler: Verify OTP & Finalize Registration (API Call) ---
+        async function handleStepTwo() {
             const otp = otpInput.value;
             if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
-                alert('Please enter a valid 6-digit OTP.');
+                showAlert('Please enter a valid 6-digit OTP.', 'error');
                 return;
             }
 
-            // SIMULATION of register_user_with_otp API call
-            console.log('Simulating Final Registration with:', { ...registrationData, otp: otp });
+            // Disable button during fetch
+            const registerButton = document.getElementById('register-button');
+            registerButton.disabled = true;
+            registerButton.textContent = 'Registering...';
 
-            // Successful registration simulation
-            alert(`SUCCESS: Account for ${registrationData.email} registered successfully (Simulated). Redirecting to login page.`);
+            // --- API CALL 2: Self-Registration with OTP Validation ---
+            const registrationPayload = {
+                _func: 'register_user',
+                otp: otp,
+                ...registrationData // Includes email, role, contactName, and role-specific fields
+            };
 
-            // In a real app, redirect after successful registration
-            window.location.href = 'login.html';
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registrationPayload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showAlert(`Account created successfully for ${registrationData.email}. Redirecting to login.`, 'success');
+                    // Redirect after successful registration
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    // API Error (e.g., Invalid OTP, OTP Expired, Email already exists)
+                    const errorMsg = data.error_details || data.error_message || 'Registration failed. The OTP may be invalid or expired.';
+                    showAlert(errorMsg, 'error');
+                }
+            } catch (error) {
+                showAlert('Network error: Could not complete registration.', 'error');
+            } finally {
+                // Re-enable button
+                registerButton.disabled = false;
+                registerButton.textContent = 'Complete Registration';
+            }
         }
 
         // --- Utility Handlers ---
-        function handleResendOtp() {
-             // SIMULATION of resending OTP
-             alert(`SIMULATION: New OTP requested and sent to ${registrationData.email}. (Valid for 5 minutes)`);
-             // In a real app, call the OTP request API again
+        async function handleResendOtp() {
+            alertContainer.innerHTML = '';
+            const email = document.getElementById('email').value;
+
+            // --- API CALL 1: Resend OTP (Same as initial request) ---
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        _func: 'request_otp',
+                        email: email
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showAlert('New OTP sent successfully. Please check your email.', 'success');
+                    // Optionally reset the timer or re-show the debug OTP
+                    if (data.debug_otp) {
+                        console.log('DEBUG RESEND OTP:', data.debug_otp);
+                    }
+                } else {
+                    const errorMsg = data.error_details || data.error_message || 'Failed to resend OTP.';
+                    showAlert(errorMsg, 'error');
+                }
+            } catch (error) {
+                showAlert('Network error: Could not resend OTP.', 'error');
+            }
         }
 
         function handleStepBack() {
-            // 1. Remove 'required' from the OTP field since Step 2 will be hidden
             otpInput.removeAttribute('required');
 
-            // Transition back to Step 1
             document.getElementById('role-selector').classList.remove('hidden');
             document.getElementById('step-one').classList.remove('hidden');
             document.getElementById('step-two').classList.add('hidden');
 
             document.getElementById('registration-title').textContent = 'Register: Step 1 of 2';
             document.getElementById('registration-subtitle').textContent = 'Select your role and provide your professional details.';
-            otpInput.value = ''; // Clear OTP input
+            otpInput.value = '';
+            alertContainer.innerHTML = '';
         }
     </script>
 </body>

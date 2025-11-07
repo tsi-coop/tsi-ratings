@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated schema for Root",
+  "type": "object",
+  "properties": {
+    "companyName": {
+      "type": "string"
+    },
+    "contactName": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "industrySector": {
+      "type": "string"
+    },
+    "linkedin": {},
+    "one_liner": {},
+    "otp": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "udyamRegistrationNo": {
+      "type": "string"
+    },
+    "_func": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "companyName",
+    "contactName",
+    "email",
+    "industrySector",
+    "linkedin",
+    "one_liner",
+    "otp",
+    "role",
+    "udyamRegistrationNo",
+    "_func"
+  ]
+}

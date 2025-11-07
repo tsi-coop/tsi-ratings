@@ -31,7 +31,8 @@ public class InterceptingFilter implements Filter {
     ));
 
     private static final Set<String> ADMIN_NOAUTH_FUNCS = new HashSet<>(Arrays.asList(
-            "reset_password",
+            "request_otp",
+            "register_user",
             "login"
     ));
 
