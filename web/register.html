@@ -254,6 +254,14 @@
                         <input type="text" id="org-name" name="org-name" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., GreenTech Solutions Pvt. Ltd.">
                     </div>
                     <div>
+                        <label for="org-detail" class="block text-sm font-medium text-gray-700 mb-1">Tag line / Short Description *</label>
+                        <input type="text" id="org-detail" name="org-detail" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., One stop agri processor">
+                    </div>
+                    <div>
+                        <label for="linkedin" class="block text-sm font-medium text-gray-700 mb-1">Website/Linkedin *</label>
+                        <input type="text" id="linkedin" name="linkedin" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="">
+                    </div>
+                    <div>
                         <label for="udyam" class="block text-sm font-medium text-gray-700 mb-1">Udyam Registration Number (Optional)</label>
                         <input type="text" id="udyam" name="udyam" class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., UDYAM-XX-0000000">
                     </div>
@@ -262,24 +270,32 @@
             } else if (type === 'auditor') {
                 htmlContent = `
                     <div>
-                        <label for="firm-name" class="block text-sm font-medium text-gray-700 mb-1">Auditing Firm Name *</label>
-                        <input type="text" id="firm-name" name="firm-name" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., Tech Audit Consultants LLP">
+                        <label for="org-name" class="block text-sm font-medium text-gray-700 mb-1">Auditing Firm Name *</label>
+                        <input type="text" id="org-name" name="org-name" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., Tech Audit Consultants LLP">
                     </div>
                     <div>
-                        <label for="certification" class="block text-sm font-medium text-gray-700 mb-1">Certification/License Number *</label>
-                        <input type="text" id="certification" name="certification" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., ICAI/AICPA ID or Tech Certification">
+                        <label for="org-detail" class="block text-sm font-medium text-gray-700 mb-1">Tag line / Short Description *</label>
+                        <input type="text" id="org-detail" name="org-detail" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., Seasoned IT Auditors with 20+ years of experience">
+                    </div>
+                    <div>
+                        <label for="linkedin" class="block text-sm font-medium text-gray-700 mb-1">Website/Linkedin *</label>
+                        <input type="text" id="linkedin" name="linkedin" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="">
                     </div>
                 `;
                 emailLabelText = 'Professional Email *';
             } else if (type === 'lender') {
                 htmlContent = `
-                    <div>
-                        <label for="bank-name" class="block text-sm font-medium text-gray-700 mb-1">Lending Institution Name *</label>
-                        <input type="text" id="bank-name" name="bank-name" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., ABC Bank or FinTech Credit Solutions">
+                     <div>
+                        <label for="org-name" class="block text-sm font-medium text-gray-700 mb-1">Financial Institution Name *</label>
+                        <input type="text" id="org-name" name="org-name" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., XYZ Agri Credit">
                     </div>
                     <div>
-                        <label for="role-designation" class="block text-sm font-medium text-gray-700 mb-1">Your Role/Designation *</label>
-                        <input type="text" id="role-designation" name="role-designation" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., Senior Underwriter">
+                        <label for="org-detail" class="block text-sm font-medium text-gray-700 mb-1">Tag line / Short Description *</label>
+                        <input type="text" id="org-detail" name="org-detail" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="e.g., Working capital loan for agri enterprises">
+                    </div>
+                    <div>
+                        <label for="linkedin" class="block text-sm font-medium text-gray-700 mb-1">Website/Linkedin *</label>
+                        <input type="text" id="linkedin" name="linkedin" required class="input-style w-full px-4 py-2 border rounded-lg shadow-sm" placeholder="">
                     </div>
                 `;
                 emailLabelText = 'Official Email *';
@@ -319,28 +335,32 @@
                 email: email,
                 contactName: fullName,
                 // These are placeholders for Auditor/Lender data that would map to User fields like one_liner/linkedin
-                one_liner: null,
-                linkedin: null,
+                one_liner: '',
+                linkedin: '',
 
                 // Fields specific to MSME (mapped to the MSME table)
-                companyName: null,
-                udyamRegistrationNo: null,
+                companyName: '',
+                udyamRegistrationNo: '',
                 industrySector: 'Not Specified', // Default for now
             };
 
             // Enhance data based on role
             if (registrationData.role === 'msme') {
                 registrationData.companyName = document.getElementById('org-name').value;
+                registrationData.one_liner = document.getElementById('org-detail').value;
+                registrationData.linkedin = document.getElementById('linkedin').value;
                 registrationData.udyamRegistrationNo = document.getElementById('udyam').value;
-                // Note: industrySector is missing from the form, defaulting above.
+                registrationData.industrySector = 'MSME';
             } else if (registrationData.role === 'auditor') {
-                // Mapping firm name and certification to generic professional fields for simplicity
-                registrationData.one_liner = document.getElementById('firm-name').value;
-                registrationData.linkedin = document.getElementById('certification').value;
+                registrationData.companyName = document.getElementById('org-name').value;
+                registrationData.one_liner = document.getElementById('org-detail').value;
+                registrationData.linkedin = document.getElementById('linkedin').value;
+                registrationData.industrySector = 'IT';
             } else if (registrationData.role === 'lender') {
-                // Mapping bank name and role designation to generic professional fields for simplicity
-                registrationData.one_liner = document.getElementById('bank-name').value;
-                registrationData.linkedin = document.getElementById('role-designation').value;
+                registrationData.companyName = document.getElementById('org-name').value;
+                registrationData.one_liner = document.getElementById('org-detail').value;
+                registrationData.linkedin = document.getElementById('linkedin').value;
+                registrationData.industrySector = 'FINANCE';
             }
 
             // --- API CALL 1: Request OTP ---
@@ -408,9 +428,16 @@
 
             // --- API CALL 2: Self-Registration with OTP Validation ---
             const registrationPayload = {
-                _func: 'register_user',
-                otp: otp,
-                ...registrationData // Includes email, role, contactName, and role-specific fields
+                '_func': 'register_user',
+                'otp': otp,
+                'companyName':registrationData.companyName,
+                'contactName':registrationData.contactName,
+                'email':registrationData.email,
+                'industrySector':registrationData.industrySector,
+                'linkedin':registrationData.linkedin,
+                'one_liner':registrationData.one_liner,
+                'role':registrationData.role,
+                'udyamRegistrationNo':registrationData.udyamRegistrationNo
             };
 
             try {
@@ -430,7 +457,7 @@
                     }, 2000);
                 } else {
                     // API Error (e.g., Invalid OTP, OTP Expired, Email already exists)
-                    const errorMsg = data.error_details || data.error_message || 'Registration failed. The OTP may be invalid or expired.';
+                    const errorMsg = data.message || 'Registration failed. The OTP may be invalid or expired.';
                     showAlert(errorMsg, 'error');
                 }
             } catch (error) {

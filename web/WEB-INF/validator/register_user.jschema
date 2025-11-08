@@ -15,8 +15,12 @@
     "industrySector": {
       "type": "string"
     },
-    "linkedin": {},
-    "one_liner": {},
+    "linkedin": {
+      "type": "string"
+    },
+    "one_liner": {
+      "type": "string"
+    },
     "otp": {
       "type": "string"
     },
