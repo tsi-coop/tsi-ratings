@@ -109,7 +109,7 @@
         </div>
       </div>
 
-      <button type="button" id="request-otp-btn" onclick="requestOTP()"
+      <button type="button" id="request-otp-btn" onclick="requestOTP(false)"
               class="animated-button w-full h-11 inline-flex items-center justify-center rounded-lg font-medium text-lg tracking-wide hover:opacity-90">
         Request OTP
       </button>
@@ -121,7 +121,7 @@
       <div class="flex justify-between space-x-2 mb-6" id="otp-inputs-container">
       </div>
 
-      <button type="submit"
+      <button type="submit" id="verify-login-btn"
               class="animated-button w-full h-11 inline-flex items-center justify-center rounded-lg font-medium text-lg tracking-wide hover:opacity-90">
         Verify & Log In
       </button>
@@ -150,10 +150,12 @@
 </div>
 
 <script>
+        const API_URL = '/api/v1/user'; // API endpoint based on User.java
         let currentCaptcha = '';
         let timerInterval;
-        const correctOTP = '123456'; // Simulated correct OTP
-        const alertContainer = document.getElementById('alert-container'); // Get the new alert container
+        const alertContainer = document.getElementById('alert-container');
+
+        // --- Utility Functions ---
 
         /**
          * Displays a formatted alert message.
@@ -161,11 +163,8 @@
          * @param {string} type - 'success', 'error', or 'info'.
          */
         function showAlert(message, type) {
-            let bgColor;
-            let textColor;
-            let borderColor;
+            let bgColor, textColor, borderColor;
 
-            // Define styling based on the type of alert
             if (type === 'success') {
                 bgColor = 'bg-green-100';
                 textColor = 'text-green-800';
@@ -174,7 +173,7 @@
                 bgColor = 'bg-red-100';
                 textColor = 'text-red-800';
                 borderColor = 'border-red-500';
-            } else { // default to info
+            } else {
                 bgColor = 'bg-blue-100';
                 textColor = 'text-blue-800';
                 borderColor = 'border-blue-500';
@@ -186,22 +185,18 @@
                 </div>
             `;
 
-            // Clear any existing timeout and content
             if (alertContainer.timeoutId) {
                 clearTimeout(alertContainer.timeoutId);
             }
             alertContainer.innerHTML = '';
-
-            // Display the alert
             alertContainer.innerHTML = alertHtml;
-            // Use setTimeout to allow CSS transition
+
             setTimeout(() => {
                 const alertElement = alertContainer.querySelector('div');
                 if (alertElement) alertElement.classList.remove('opacity-0');
             }, 10);
 
-            // Hide alert after 5 seconds (5000 milliseconds) for error/success
-            if (type !== 'info') { // Keep info alerts visible until state changes
+            if (type !== 'info') {
                  alertContainer.timeoutId = setTimeout(() => {
                     const alertElement = alertContainer.querySelector('div');
                     if (alertElement) {
@@ -214,7 +209,6 @@
             }
         }
 
-        // --- Captcha Logic ---
         function generateCaptcha() {
             const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
             let captcha = '';
@@ -226,7 +220,6 @@
             document.getElementById('captcha-input').value = '';
         }
 
-        // --- OTP Input Helper ---
         function setupOTPInputs() {
             const container = document.getElementById('otp-inputs-container');
             container.innerHTML = '';
@@ -239,7 +232,7 @@
                 input.oninput = (e) => {
                     if (e.data && i < 5) {
                         document.getElementById(`otp-digit-${i + 1}`).focus();
-                    } else if (e.inputType === 'deleteContentBackward' && i > 0) { // Backspace
+                    } else if (e.inputType === 'deleteContentBackward' && i > 0) {
                         document.getElementById(`otp-digit-${i - 1}`).focus();
                     }
                 };
@@ -247,14 +240,11 @@
             }
         }
 
-        // --- Timer Logic ---
         function startTimer(duration) {
             let timer = duration;
             const resendBtn = document.getElementById('resend-otp-btn');
-            const timerDisplay = document.getElementById('otp-timer');
 
             resendBtn.disabled = true;
-            timerDisplay.textContent = duration;
             resendBtn.innerHTML = `Resend Code (<span id="otp-timer">${duration}</span>s)`;
 
             clearInterval(timerInterval);
@@ -272,29 +262,34 @@
             }, 1000);
         }
 
-        // --- Step Navigation ---
         function showStep(step) {
             document.getElementById('step-1').classList.toggle('hidden', step !== 1);
             document.getElementById('step-2').classList.toggle('hidden', step !== 2);
-            alertContainer.innerHTML = ''; // Clear alerts on step change
+            alertContainer.innerHTML = '';
 
-            // Re-generate captcha if moving back to step 1
             if (step === 1) {
                  generateCaptcha();
             } else {
-                 // Focus on the first OTP input when moving to step 2
                  setTimeout(() => {
                      document.getElementById('otp-digit-0')?.focus();
                  }, 50);
             }
         }
 
-        // --- Request OTP Handler (Step 1 Submit) ---
-        function requestOTP(isResend = false) {
+        // --- API Integration Functions ---
+
+        /**
+         * Handles the request for OTP (API call: request_otp).
+         * @param {boolean} isResend - True if called from the resend button.
+         */
+        async function requestOTP(isResend = false) {
             const emailInput = document.getElementById('email-input');
             const captchaInput = document.getElementById('captcha-input');
-            alertContainer.innerHTML = ''; // Clear alerts before new attempt
+            const requestBtn = document.getElementById('request-otp-btn');
 
+            alertContainer.innerHTML = '';
+
+            // 1. Frontend Validation (Step 1)
             if (!emailInput.value || !captchaInput.value) {
                 if (!isResend) {
                     showAlert('Please fill in both email and captcha fields.', 'error');
@@ -308,26 +303,67 @@
                 return;
             }
 
-            // SIMULATION: Assume OTP request is successful
-            document.getElementById('otp-email-display').textContent = emailInput.value;
-            setupOTPInputs();
-            startTimer(30);
-            showStep(2);
+            // 2. Disable buttons and show loading state
+            if (!isResend) {
+                requestBtn.disabled = true;
+                requestBtn.textContent = 'Sending...';
+            }
 
-            // Show success/info alert
-            if (isResend) {
-                 showAlert('New OTP sent successfully to ' + emailInput.value + '.', 'info');
-            } else {
-                 showAlert('OTP requested successfully. Please enter the code below.', 'success');
+            // --- API CALL 1: request_otp ---
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        _func: 'request_otp', // Function in User.java
+                        email: emailInput.value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Success: Transition to Step 2
+                    document.getElementById('otp-email-display').textContent = emailInput.value;
+                    setupOTPInputs();
+                    startTimer(30); // Start the 30-second resend timer
+                    showStep(2);
+
+                    if (isResend) {
+                         showAlert('New OTP sent successfully. It is valid for 5 minutes.', 'success');
+                    } else {
+                         showAlert('OTP sent successfully. Please enter the code below.', 'success');
+                    }
+
+                    // Log debug OTP if available (as per User.java)
+                    if (data.debug_otp) {
+                        console.log('DEBUG OTP:', data.debug_otp);
+                    }
+                } else {
+                    // API Error (e.g., User not found, Invalid email format)
+                    const errorMsg = data.error_details || data.error_message || 'OTP request failed. User may not be registered.';
+                    showAlert(errorMsg, 'error');
+                }
+            } catch (error) {
+                showAlert('Network error: Could not connect to the server.', 'error');
+            } finally {
+                 // Re-enable button if still on step 1 (only necessary on initial request)
+                if (!isResend) {
+                    requestBtn.disabled = false;
+                    requestBtn.textContent = 'Request OTP';
+                }
             }
         }
 
-        // --- Verify OTP Handler (Step 2 Submit) ---
-        document.getElementById('login-form').addEventListener('submit', function(e) {
+        // --- Verify OTP & Login Handler (API call: login_otp) ---
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            alertContainer.innerHTML = ''; // Clear alerts before new attempt
+            alertContainer.innerHTML = '';
 
-            // Collect OTP
+            const verifyBtn = document.getElementById('verify-login-btn');
+            const email = document.getElementById('email-input').value;
+
+            // 1. Collect OTP
             let enteredOTP = '';
             for (let i = 0; i < 6; i++) {
                 const otpDigit = document.getElementById(`otp-digit-${i}`).value;
@@ -338,13 +374,48 @@
                 enteredOTP += otpDigit;
             }
 
-            if (enteredOTP === correctOTP) {
-                showAlert('Login Successful! Welcome to TSI Ratings Platform.', 'success');
-                clearInterval(timerInterval);
-                // In a real application, you would redirect the user here
-                // Example: setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
-            } else {
-                showAlert('OTP Verification Failed. Please check the code and try again.', 'error');
+            // 2. Disable button and show loading state
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Verifying...';
+
+            // --- API CALL 2: login_otp ---
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        _func: 'login_otp', // Function in User.java
+                        email: email,
+                        otp: enteredOTP
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Success (OTP is valid and not expired)
+                    showAlert('Login Successful! Welcome to TSI Ratings Platform.', 'success');
+                    clearInterval(timerInterval);
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('role', data.role);
+                    if(data.role === 'msme'){
+                        window.location.href = 'msme-dashboard.html';
+                    }else if(data.role === 'auditor'){
+                        window.location.href = 'auditor-dashboard.html';
+                    }else{
+                        window.location.href = 'fin-partner-dashboard.html';
+                    }
+                } else {
+                    // API Error (e.g., Invalid OTP, OTP expired, User not found)
+                    const errorMsg = data.error_details || data.error_message || 'Login failed. Invalid or expired OTP.';
+                    showAlert(errorMsg, 'error');
+                }
+            } catch (error) {
+                showAlert('Network error: Could not complete login.', 'error');
+            } finally {
+                // Re-enable button
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify & Log In';
             }
         });
 
