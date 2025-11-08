@@ -407,7 +407,7 @@
                     }
                 } else {
                     // API Error (e.g., Invalid OTP, OTP expired, User not found)
-                    const errorMsg = data.error_details || data.error_message || 'Login failed. Invalid or expired OTP.';
+                    const errorMsg = data.message || 'Login failed. Invalid or expired OTP.';
                     showAlert(errorMsg, 'error');
                 }
             } catch (error) {
