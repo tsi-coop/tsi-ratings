@@ -1,3 +1,4 @@
 # Service definitions
 /api/v1/user=org.tsicoop.ratings.service.v1.User
+/api/v1/dma=org.tsicoop.ratings.service.v1.DMA
 

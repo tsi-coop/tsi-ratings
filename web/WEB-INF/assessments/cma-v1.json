@@ -1,0 +1,191 @@
+{
+  "assessment_type": "capability-maturity",
+  "version": "v1",
+  "questionnaireTitle": "Capability Maturity Assessment",
+  "sections": [
+    {
+      "sectionId": "S1",
+      "sectionTitle": "Service Design & Offerings",
+      "questions": [
+        {
+          "questionId": "Q1.1",
+          "questionText": "How are your digital service offerings defined and managed?",
+          "options": [
+            { "value": 1, "text": "Ad-hoc; services are created as per client requests without formal definition." },
+            { "value": 2, "text": "Services are loosely defined, primarily through informal discussions." },
+            { "value": 3, "text": "Services have basic definitions and scopes, but may vary per project." },
+            { "value": 4, "text": "Services are clearly defined, documented, and have standardized components." },
+            { "value": 5, "text": "Services are modular, well-documented, continuously updated, and designed for scalability and reusability." }
+          ]
+        },
+        {
+          "questionId": "Q1.2",
+          "questionText": "To what extent do you tailor your services to specific MSME needs?",
+          "options": [
+            { "value": 1, "text": "Minimal tailoring; services are generic." },
+            { "value": 2, "text": "Some customization based on direct client requests." },
+            { "value": 3, "text": "We attempt to understand client needs and adapt existing services." },
+            { "value": 4, "text": "We have a structured process for assessing MSME needs and proposing tailored solutions." },
+            { "value": 5, "text": "Deep understanding of MSME segments, offering highly customized and flexible service packages." }
+          ]
+        },
+        {
+          "questionId": "Q1.3",
+          "questionText": "Do your service offerings leverage or integrate with Free and Open Source Software (FOSS) or Open API Specifications?",
+          "options": [
+            { "value": 1, "text": "No, we primarily use proprietary solutions." },
+            { "value": 2, "text": "Unaware of FOSS/Open APIs benefits, or use them passively." },
+            { "value": 3, "text": "We use some FOSS but not strategically; Open APIs are used if required by client." },
+            { "value": 4, "text": "We actively integrate FOSS and utilize Open APIs to offer flexible and cost-effective solutions." },
+            { "value": 5, "text": "Strategic FOSS adoption and Open API utilization are core to our service development and integration capabilities." }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "S2",
+      "sectionTitle": "Project Management & Delivery",
+      "questions": [
+        {
+          "questionId": "Q2.1",
+          "questionText": "How are projects managed from initiation to completion?",
+          "options": [
+            { "value": 1, "text": "Ad-hoc; projects are managed informally, success depends on individual effort." },
+            { "value": 2, "text": "Basic project tracking; some informal communication about progress." },
+            { "value": 3, "text": "Projects follow a defined, but not always consistent, methodology (e.g., waterfall, basic agile)." },
+            { "value": 4, "text": "Standardized project management processes (e.g., Agile, Scrum, Kanban) are consistently applied." },
+            { "value": 5, "text": "Optimized project delivery with continuous improvement, predictive analytics, and proactive risk management." }
+          ]
+        },
+        {
+          "questionId": "Q2.2",
+          "questionText": "How do you ensure the quality of the services and solutions delivered?",
+          "options": [
+            { "value": 1, "text": "Quality is checked only at the end by the client." },
+            { "value": 2, "text": "Informal checks are done during the project." },
+            { "value": 3, "text": "Basic quality assurance (QA) steps are included in the process." },
+            { "value": 4, "text": "Formal QA processes, testing, and feedback loops are integrated into delivery." },
+            { "value": 5, "text": "Continuous quality assurance, automated testing, and proactive performance monitoring are standard." }
+          ]
+        },
+        {
+          "questionId": "Q2.3",
+          "questionText": "How transparent are you with clients regarding project progress, issues, and changes?",
+          "options": [
+            { "value": 1, "text": "Limited communication, mostly reactive." },
+            { "value": 2, "text": "Updates are provided upon client request." },
+            { "value": 3, "text": "Regular scheduled updates, but sometimes lacking detail." },
+            { "value": 4, "text": "Proactive and structured communication (e.g., regular meetings, shared dashboards)." },
+            { "value": 5, "text": "Real-time transparency, collaborative platforms, and clear escalation paths." }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "S3",
+      "sectionTitle": "Technical Capabilities & Innovation",
+      "questions": [
+        {
+          "questionId": "Q3.1",
+          "questionText": "What is the depth and breadth of your technical expertise relevant to MSME digital needs (e.g., web development, cloud, cybersecurity, AI)?",
+          "options": [
+            { "value": 1, "text": "Limited expertise, mostly basic web or single service." },
+            { "value": 2, "text": "Some basic skills across a few digital domains." },
+            { "value": 3, "text": "Competent in a few key digital areas; able to handle standard requests." },
+            { "value": 4, "text": "Strong expertise across multiple digital domains, capable of complex solutions." },
+            { "value": 5, "text": "Leading-edge expertise in diverse digital technologies, including emerging trends (AI, IoT), with continuous upskilling." }
+          ]
+        },
+        {
+          "questionId": "Q3.2",
+          "questionText": "How do you stay updated with new technologies and industry best practices?",
+          "options": [
+            { "value": 1, "text": "We don't have a formal process." },
+            { "value": 2, "text": "Ad-hoc individual learning." },
+            { "value": 3, "text": "Informal team discussions; occasional online learning." },
+            { "value": 4, "text": "Regular training, certifications, and dedicated R&D time for new technologies." },
+            { "value": 5, "text": "Embedded R&D culture, active participation in industry forums, and continuous learning initiatives." }
+          ]
+        },
+        {
+          "questionId": "Q3.3",
+          "questionText": "Do you have a dedicated approach to cybersecurity for your own systems and clients' solutions?",
+          "options": [
+            { "value": 1, "text": "No specific measures beyond basic antivirus." },
+            { "value": 2, "text": "Reliance on basic platform security; ad-hoc fixes." },
+            { "value": 3, "text": "Basic security practices implemented, but not formalized." },
+            { "value": 4, "text": "Defined security policies, regular security audits, and staff training." },
+            { "value": 5, "text": "Proactive security strategy, incident response plan, vulnerability management, and continuous monitoring." }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "S4",
+      "sectionTitle": "Customer Support & Relationship Management",
+      "questions": [
+        {
+          "questionId": "Q4.1",
+          "questionText": "How do you handle client support and issue resolution after project delivery?",
+          "options": [
+            { "value": 1, "text": "No formal support; clients contact individual team members directly." },
+            { "value": 2, "text": "Basic email/phone support, often slow response times." },
+            { "value": 3, "text": "Defined support channels (e.g., helpdesk email/number) with inconsistent response." },
+            { "value": 4, "text": "Structured support system (e.g., ticketing system, SLAs) with clear response times." },
+            { "value": 5, "text": "Proactive support, dedicated account managers, self-service portals, and continuous client feedback loops." }
+          ]
+        },
+        {
+          "questionId": "Q4.2",
+          "questionText": "How do you gather and act on client feedback to improve your services?",
+          "options": [
+            { "value": 1, "text": "We rarely seek or use feedback." },
+            { "value": 2, "text": "Informal feedback is sometimes received." },
+            { "value": 3, "text": "We occasionally ask for feedback, but act on it inconsistently." },
+            { "value": 4, "text": "Structured feedback mechanisms (e.g., surveys, reviews) are in place, influencing service improvements." },
+            { "value": 5, "text": "Continuous feedback loops, integrated into service design, driving measurable improvements and client satisfaction." }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "S5",
+      "sectionTitle": "Business Management & Governance",
+      "questions": [
+        {
+          "questionId": "Q5.1",
+          "questionText": "How well-defined are your internal processes for operations, finance, and HR?",
+          "options": [
+            { "value": 1, "text": "Mostly informal and ad-hoc." },
+            { "value": 2, "text": "Some basic documented procedures." },
+            { "value": 3, "text": "Key processes are defined, but not consistently followed or integrated." },
+            { "value": 4, "text": "Standardized and documented processes are generally followed across the organization." },
+            { "value": 5, "text": "Fully optimized and integrated processes, supported by automation and continuous improvement." }
+          ]
+        },
+        {
+          "questionId": "Q5.2",
+          "questionText": "Do you have clear contractual agreements and service level agreements (SLAs) with your clients?",
+          "options": [
+            { "value": 1, "text": "No formal agreements; reliance on verbal understanding." },
+            { "value": 2, "text": "Basic agreements, but without specific service level details." },
+            { "value": 3, "text": "Formal contracts, but SLAs might be vague or not consistently met." },
+            { "value": 4, "text": "Clear, detailed contracts with measurable SLAs, regularly reviewed." },
+            { "value": 5, "text": "Comprehensive, legally sound contracts with performance-based SLAs, ensuring mutual accountability." }
+          ]
+        },
+        {
+          "questionId": "Q5.3",
+          "questionText": "How do you manage your business's financial health and pricing models for MSMEs?",
+          "options": [
+            { "value": 1, "text": "Pricing is ad-hoc; financial management is reactive." },
+            { "value": 2, "text": "Basic financial tracking; simple pricing." },
+            { "value": 3, "text": "Defined pricing models, but not always transparent or optimized for MSMEs." },
+            { "value": 4, "text": "Transparent and flexible pricing models, with proactive financial planning." },
+            { "value": 5, "text": "Strategic financial management, value-based pricing, and flexible models catering to diverse MSME budgets." }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -32,9 +32,6 @@ public class DMA implements Action {
     private static final String INTERNAL_SERVICE_TOKEN = "INTERNAL_JWT_SECRET_FOR_EXPRESS_COMMUNICATION"; // Placeholder
 
     // Mock Questionnaire data (simulating fetching from configuration store)
-    private static final String MOCK_QUESTIONNAIRE_JSON =
-            "{\"assessment_type\":\"digital-maturity\",\"version\":\"v1\",\"questionnaireTitle\":\"Digital Maturity Assessment (DMA)\"," +
-                    "\"sections\":[{\"sectionId\":\"S1\",\"sectionTitle\":\"Digital Strategy & Leadership\",\"questions\":[{\"questionId\":\"Q1.1\",\"questionText\":\"Has a digital strategy?\"},{\"questionId\":\"Q1.2\",\"questionText\":\"Leadership involvement?\"}]}]}";
 
     /**
      * Handles all DMA operations via a single POST endpoint.
@@ -61,11 +58,11 @@ public class DMA implements Action {
             // }
 
             switch (func.toLowerCase()) {
-                case "getquestionnaire":
+                case "get_dma_questionnaire":
                     output = getQuestionnaire();
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
-                case "submitassessment":
+                case "submit_assessment":
                     // Authorization: Must be an IT_AUDITOR
                     // if (!"IT_AUDITOR".equals(authContext.getRole())) {
                     //    OutputProcessor.errorResponse(res, HttpServletResponse.SC_FORBIDDEN, "Forbidden", "Only IT Auditors can submit assessments.", req.getRequestURI());
@@ -74,12 +71,12 @@ public class DMA implements Action {
                     output = submitAssessment(input);
                     OutputProcessor.send(res, HttpServletResponse.SC_ACCEPTED, output);
                     break;
-                case "getassessmentdetails":
+                case "get_dma_assessment_details":
                     Long assessmentId = Long.parseLong(input.get("assessmentId").toString());
                     output = getAssessmentDetails(assessmentId);
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
-                case "validateassessment":
+                case "validate_dma_assessment":
                     output = validateAssessment(input);
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
@@ -98,9 +95,9 @@ public class DMA implements Action {
      * Retrieves the latest DMA questionnaire structure.
      */
     private JSONObject getQuestionnaire() throws ParseException {
-        // In a real system, this would fetch from a database or configuration store.
-        JSONParser parser = new JSONParser();
-        return (JSONObject) parser.parse(MOCK_QUESTIONNAIRE_JSON);
+        JSONObject assessment = new JSONObject();
+        assessment = SystemConfig.readJSONTemplate("/WEB-INF/assessments/"+"dma"+"-"+"v1"+".json");
+        return assessment;
     }
 
     /**

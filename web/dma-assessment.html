@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TSI Ratings | Digital Maturity Assessment</title>
-    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -51,246 +50,152 @@
             }
         }
 
-        // --- DMA JSON DATA (from uploaded:digital-maturity-v1.json) ---
-        const dmaData = {
-          "assessment_type": "digital-maturity",
-          "version": "v1",
-          "questionnaireTitle": "Digital Maturity Assessment (DMA)",
-          "sections": [
-            {
-              "sectionId": "S1",
-              "sectionTitle": "Digital Strategy & Leadership (Vision & Planning)",
-              "questions": [
-                {
-                  "questionId": "Q1.1",
-                  "questionText": "Does your business have a clear, documented digital strategy that aligns with your overall business goals?",
-                  "options": [
-                    { "value": 1, "text": "No, we operate digitally in an ad-hoc manner." },
-                    { "value": 2, "text": "We have some digital activities, but no formal strategy." },
-                    { "value": 3, "text": "We have a basic digital plan, but it's not fully integrated." },
-                    { "value": 4, "text": "We have a clear digital strategy that is periodically reviewed." },
-                    { "value": 5, "text": "Digital strategy is fully integrated into our business strategy, driving innovation." }
-                  ]
-                },
-                {
-                  "questionId": "Q1.2",
-                  "questionText": "How involved is your leadership (owners, managers) in driving digital initiatives and fostering a digital mindset?",
-                  "options": [
-                    { "value": 1, "text": "Not involved, digital decisions are reactive." },
-                    { "value": 2, "text": "Minimally involved, delegating to IT or junior staff." },
-                    { "value": 3, "text": "Somewhat involved, supportive but not leading the charge." },
-                    { "value": 4, "text": "Actively involved, promoting digital adoption and transformation." },
-                    { "value": 5, "text": "Digital visionaries, leading by example and continuously seeking new opportunities." }
-                  ]
-                },
-                {
-                  "questionId": "Q1.3",
-                  "questionText": "Do you regularly monitor digital trends and new technologies relevant to your industry?",
-                  "options": [
-                    { "value": 1, "text": "No." },
-                    { "value": 2, "text": "Rarely or on an ad-hoc basis." },
-                    { "value": 3, "text": "Sometimes, through informal channels." },
-                    { "value": 4, "text": "Yes, we try to stay informed through industry news or events." },
-                    { "value": 5, "text": "Yes, we actively research and evaluate new technologies for potential adoption." }
-                  ]
-                }
-              ]
-            },
-            {
-              "sectionId": "S2",
-              "sectionTitle": "Digital Operations & Processes (Internal Efficiency)",
-              "questions": [
-                {
-                  "questionId": "Q2.1",
-                  "questionText": "How do you manage your customer relationships (e.g., sales, support, inquiries)?",
-                  "options": [
-                    { "value": 1, "text": "Primarily manual (paper, phone calls, basic email)." },
-                    { "value": 2, "text": "Basic digital tools (e.g., general email, spreadsheets)." },
-                    { "value": 3, "text": "Using some specialized tools (e.g., basic CRM, ticketing system)." },
-                    { "value": 4, "text": "Integrated CRM or similar system to manage most customer interactions." },
-                    { "value": 5, "text": "Automated and personalized customer journeys across multiple digital channels." }
-                  ]
-                },
-                {
-                  "questionId": "Q2.2",
-                  "questionText": "To what extent are your internal business processes (e.g., accounting, inventory, HR) digitized?",
-                  "options": [
-                    { "value": 1, "text": "Mostly manual/paper-based." },
-                    { "value": 2, "text": "Some individual processes are digitized, but not integrated." },
-                    { "value": 3, "text": "Key processes are digitized, but there are still manual hand-offs." },
-                    { "value": 4, "text": "Many processes are automated and integrated using digital tools." },
-                    { "value": 5, "text": "End-to-end digital processes with significant automation and data flow." }
-                  ]
-                },
-                {
-                  "questionId": "Q2.3",
-                  "questionText": "Do you use digital tools for internal communication and collaboration among your team?",
-                  "options": [
-                    { "value": 1, "text": "No, mainly face-to-face or phone." },
-                    { "value": 2, "text": "Basic tools like WhatsApp or SMS." },
-                    { "value": 3, "text": "Using general-purpose communication apps (e.g., common chat apps)." },
-                    { "value": 4, "text": "Dedicated collaboration platforms (e.g., Slack, Microsoft Teams, internal project management tools)." },
-                    { "value": 5, "text": "Integrated digital workspaces that enhance productivity and information sharing across all teams." }
-                  ]
-                }
-              ]
-            },
-            {
-              "sectionId": "S3",
-              "sectionTitle": "Digital Customer Experience & Marketing (External Reach)",
-              "questions": [
-                {
-                  "questionId": "Q3.1",
-                  "questionText": "Does your business have a website or online presence (e.g., social media page, Google My Business)?",
-                  "options": [
-                    { "value": 1, "text": "No." },
-                    { "value": 2, "text": "Only social media presence." },
-                    { "value": 3, "text": "Basic website or detailed social media presence." },
-                    { "value": 4, "text": "Professional website with basic information and contact forms." },
-                    { "value": 5, "text": "Dynamic, mobile-responsive website with e-commerce or interactive features." }
-                  ]
-                },
-                {
-                  "questionId": "Q3.2",
-                  "questionText": "How do you acquire new customers and promote your products/services digitally?",
-                  "options": [
-                    { "value": 1, "text": "Primarily offline methods." },
-                    { "value": 2, "text": "Basic social media posts/word-of-mouth online." },
-                    { "value": 3, "text": "Occasional paid ads or content, without a clear strategy." },
-                    { "value": 4, "text": "Active use of digital marketing channels (e.g., social media marketing, SEO, email marketing)." },
-                    { "value": 5, "text": "Data-driven digital marketing campaigns with analytics, personalization, and multi-channel integration." }
-                  ]
-                },
-                {
-                  "questionId": "Q3.3",
-                  "questionText": "Do you offer digital payment options to your customers (e.g., UPI, online banking, digital wallets)?",
-                  "options": [
-                    { "value": 1, "text": "No, only cash or traditional bank transfers." },
-                    { "value": 2, "text": "Basic digital payment options via third-party apps." },
-                    { "value": 3, "text": "Some integrated digital payment gateways." },
-                    { "value": 4, "text": "Multiple convenient digital payment options widely promoted." },
-                    { "value": 5, "text": "Seamless and secure digital payment system integrated with sales and accounting." }
-                  ]
-                }
-              ]
-            },
-            {
-              "sectionId": "S4",
-              "sectionTitle": "Data & Analytics (Insights & Decision Making)",
-              "questions": [
-                {
-                  "questionId": "Q4.1",
-                  "questionText": "Do you collect and analyze data related to your business operations or customer behavior?",
-                  "options": [
-                    { "value": 1, "text": "No." },
-                    { "value": 2, "text": "We collect some data, but rarely analyze it." },
-                    { "value": 3, "text": "We analyze basic sales or customer data manually (e.g., in spreadsheets)." },
-                    { "value": 4, "text": "We use analytics tools (e.g., Google Analytics, sales reporting software) to gain insights." },
-                    { "value": 5, "text": "Data-driven decision-making is central to our business, with advanced analytics and dashboards." }
-                  ]
-                },
-                {
-                  "questionId": "Q4.2",
-                  "questionText": "Is your business data stored and managed in a structured and accessible way (e.g., cloud storage, databases)?",
-                  "options": [
-                    { "value": 1, "text": "No, data is scattered or unorganized." },
-                    { "value": 2, "text": "Some data is stored digitally, but not systematically." },
-                    { "value": 3, "text": "Basic cloud storage or shared folders for some data." },
-                    { "value": 4, "text": "Centralized digital storage with some data management practices." },
-                    { "value": 5, "text": "Robust data management system ensuring data quality, security, and accessibility for analysis." }
-                  ]
-                }
-              ]
-            },
-            {
-              "sectionId": "S5",
-              "sectionTitle": "Technology Infrastructure & Cybersecurity (Foundation & Security)",
-              "questions": [
-                {
-                  "questionId": "Q5.1",
-                  "questionText": "Do you use cloud-based services (e.g., for email, storage, business applications)?",
-                  "options": [
-                    { "value": 1, "text": "No." },
-                    { "value": 2, "text": "Minimal use for basic services like email." },
-                    { "value": 3, "text": "Some business applications are cloud-based." },
-                    { "value": 4, "text": "Significant reliance on cloud services for core operations." },
-                    { "value": 5, "text": "Fully optimized cloud infrastructure for scalability, flexibility, and disaster recovery." }
-                  ]
-                },
-                {
-                  "questionId": "Q5.2",
-                  "questionText": "How do you manage cybersecurity for your business data and systems?",
-                  "options": [
-                    { "value": 1, "text": "No specific measures in place." },
-                    { "value": 2, "text": "Basic antivirus software." },
-                    { "value": 3, "text": "Standard cybersecurity practices (e.g., strong passwords, firewalls)." },
-                    { "value": 4, "text": "Regular backups, employee training, and basic threat monitoring." },
-                    { "value": 5, "text": "Comprehensive cybersecurity strategy, including advanced protection, incident response, and regular audits." }
-                  ]
-                },
-                {
-                  "questionId": "Q5.3",
-                  "questionText": "Do you use Free and Open Source Software (FOSS) or explore Open API specifications in your operations?",
-                  "options": [
-                    { "value": 1, "text": "No, we mostly use proprietary software." },
-                    { "value": 2, "text": "Unaware of FOSS or Open APIs." },
-                    { "value": 3, "text": "We might use some FOSS, but not strategically." },
-                    { "value": 4, "text": "We actively explore and use FOSS, and consider Open API specs for integration." },
-                    { "value": 5, "text": "Strategic adoption of FOSS and Open APIs to build a flexible and cost-effective tech stack." }
-                  ]
-                }
-              ]
-            },
-            {
-              "sectionId": "S6",
-              "sectionTitle": "Digital Skills & Culture (People & Adaptability)",
-              "questions": [
-                {
-                  "questionId": "Q6.1",
-                  "questionText": "How would you describe your employees' general digital literacy and comfort with technology?",
-                  "options": [
-                    { "value": 1, "text": "Low, many struggle with basic digital tools." },
-                    { "value": 2, "text": "Mixed, some are comfortable, others are not." },
-                    { "value": 3, "text": "Adequate, most can use basic digital tools for their tasks." },
-                    { "value": 4, "text": "Good, employees are generally proficient and open to new tools." },
-                    { "value": 5, "text": "High, employees are proactive in learning and adopting new digital solutions." }
-                  ]
-                },
-                {
-                  "questionId": "Q6.2",
-                  "questionText": "Does your business provide formal training or opportunities for employees to improve their digital skills?",
-                  "options": [
-                    { "value": 1, "text": "No." },
-                    { "value": 2, "text": "Only informal, on-the-job learning." },
-                    { "value": 3, "text": "Occasional, ad-hoc training sessions." },
-                    { "value": 4, "text": "Regular training programs or access to online learning resources." },
-                    { "value": 5, "text": "Continuous learning culture with structured digital upskilling and reskilling initiatives." }
-                  ]
-                }
-              ]
-            }
-          ]
-        };
+        const AUTH_TOKEN = localStorage.getItem('token');
+        // --- API Endpoint Definition ---
+        const DMA_API_URL = '/api/v1/dma';
 
-        // Initialize state for storing answers
+        // Global state
+        let dmaQuestionnaire = null;
         const assessmentResults = {};
+        let totalQuestionsCount = 0; // Will be set after fetching
+
+        // --- Utility Functions ---
+
+        /**
+         * Shows a message to the user in the result area.
+         * @param {string} message - The message text.
+         * @param {string} type - 'success', 'error', 'info', or 'default'.
+         */
+        function showResultMessage(message, type = 'default') {
+            const resultElement = document.getElementById('result-message');
+            resultElement.classList.remove('hidden', 'bg-red-100', 'text-red-600', 'bg-green-100', 'text-green-600');
+            resultElement.classList.add('transition-opacity', 'duration-300');
+
+            if (type === 'error') {
+                resultElement.classList.add('bg-red-100', 'text-red-600');
+            } else if (type === 'success') {
+                resultElement.classList.add('bg-green-100', 'text-green-600');
+            }
+
+            resultElement.textContent = message;
+        }
+
+        // --- API Integration ---
+
+        /**
+         * Fetches the DMA questionnaire template from the backend.
+         */
+        async function fetchQuestionnaire() {
+            showResultMessage('Loading questionnaire...', 'info');
+
+            try {
+                // Assuming a POST request with _func to get the template
+                const response = await fetch(DMA_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${AUTH_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        _func: 'get_dma_questionnaire',
+                        version: 'v1.0'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data) {
+                    dmaQuestionnaire = data;
+                    renderAssessmentForm(dmaQuestionnaire);
+                    showResultMessage(dmaQuestionnaire.questionnaireTitle + ' loaded successfully.', 'info');
+                } else {
+                    const errorMsg = data.error_details || data.error_message || 'Failed to retrieve questionnaire template.';
+                    showResultMessage(errorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showResultMessage('Network error. Could not connect to DMA service.', 'error');
+            }
+        }
+
+        /**
+         * Simulates the submission of the final score and data to the blockchain anchor system.
+         */
+        async function submitAssessment() {
+            const finalScore = calculateScore(true); // Calculate score and stop if questions are missing
+
+            if (!finalScore) return; // Stop if not all questions are answered
+
+            // Disable buttons during submission
+            const submitButton = document.querySelector('button[onclick="submitAssessment()"]');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+
+            showResultMessage('Submitting assessment and preparing for blockchain anchoring...', 'info');
+
+            // --- API CALL: submitAssessment ---
+            try {
+                // Note: The payload must match the DMA_Assessment table structure (assessmentDetailJson)
+                const submissionPayload = {
+                    _func: 'submitAssessment', // Assumed function name
+                    msmeId: 101, // Placeholder: Must be retrieved from session/context
+                    auditorId: 201, // Placeholder: Must be retrieved from session/context
+                    finalTsiScore: finalScore.percentageScore,
+                    assessmentDetailJson: {
+                        version: finalScore.version,
+                        results: finalScore.answers
+                    }
+                };
+
+                const response = await fetch(DMA_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(submissionPayload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showResultMessage(`Assessment submitted successfully! Score: ${finalScore.percentageScore}%. Anchor ID: ${data.anchorId}.`, 'success');
+
+                    // Update button state to Submitted (read-only)
+                    submitButton.textContent = 'Assessment Submitted';
+                    submitButton.classList.remove('primary-bg');
+                    submitButton.classList.add('bg-gray-500');
+                    document.querySelector('button[onclick="calculateScore()"]').disabled = true;
+                } else {
+                    const errorMsg = data.error_details || data.error_message || 'Submission failed. Please try again.';
+                    showResultMessage(errorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                showResultMessage('Network error. Could not connect to submit the assessment.', 'error');
+            } finally {
+                if(submitButton.textContent === 'Submitting...') {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Submit & Anchor to Blockchain';
+                }
+            }
+        }
 
         // --- Core Functions ---
 
         /**
          * Calculates the total TSI Score based on the selected answers.
-         * TSI Score is the sum of all question values divided by the maximum possible score, times 100.
-         * The result is the final DMA percentage score.
+         * @param {boolean} stopIfIncomplete - If true, displays an error and returns null if not all questions are answered.
          */
-        function calculateScore() {
+        function calculateScore(stopIfIncomplete = false) {
+            if (!dmaQuestionnaire) {
+                showResultMessage('Error: Questionnaire data is not loaded.', 'error');
+                return null;
+            }
+
             let totalScore = 0;
             let maxScore = 0;
             let answeredQuestions = 0;
-            let totalQuestions = 0;
 
-            dmaData.sections.forEach(section => {
+            dmaQuestionnaire.sections.forEach(section => {
                 section.questions.forEach(question => {
-                    totalQuestions++;
                     maxScore += 5; // Max score for each question is 5
 
                     const selectedValue = assessmentResults[question.questionId];
@@ -302,23 +207,22 @@
             });
 
             // Check if all questions are answered
-            if (answeredQuestions !== totalQuestions) {
-                document.getElementById('result-message').textContent = `Please answer all ${totalQuestions} questions before calculating the score.`;
-                document.getElementById('result-message').classList.remove('hidden');
-                document.getElementById('result-message').classList.remove('text-green-600');
-                document.getElementById('result-message').classList.add('text-red-600');
+            if (answeredQuestions !== totalQuestionsCount) {
+                if (stopIfIncomplete) {
+                    showResultMessage(`Please answer all ${totalQuestionsCount} questions (${answeredQuestions} answered) before submission.`, 'error');
+                    return null;
+                }
+                showResultMessage(`Incomplete: ${answeredQuestions}/${totalQuestionsCount} questions answered.`, 'info');
                 return null;
             }
 
             // Calculate percentage score (0-100)
             const percentageScore = (totalScore / maxScore) * 100;
 
-            document.getElementById('result-message').textContent = `Final DMA Score: ${percentageScore.toFixed(2)}% (Total Points: ${totalScore} / ${maxScore})`;
-            document.getElementById('result-message').classList.remove('hidden');
-            document.getElementById('result-message').classList.remove('text-red-600');
-            document.getElementById('result-message').classList.add('text-green-600');
+            showResultMessage(`Final DMA Score: ${percentageScore.toFixed(2)}% (Total Points: ${totalScore} / ${maxScore})`, 'success');
 
             return {
+                version: dmaQuestionnaire.version,
                 totalScore: totalScore,
                 maxScore: maxScore,
                 percentageScore: percentageScore.toFixed(2),
@@ -327,42 +231,17 @@
         }
 
         /**
-         * Simulates the submission of the final score to the blockchain anchor system.
+         * Renders the entire assessment form based on the fetched dmaData JSON.
+         * @param {object} data - The fetched questionnaire object.
          */
-        function submitAssessment() {
-            const finalScore = calculateScore();
-
-            if (finalScore) {
-                // In a real application, this is where you would:
-                // 1. Create a verifiable object containing all data and the score.
-                // 2. Calculate the SHA-256 hash of that object.
-                // 3. Send the hash (and potentially metadata) to the blockchain node (e.g., Firestore simulation/API).
-
-                const submissionData = JSON.stringify(finalScore, null, 2);
-
-                console.log("--- DMA Submission Data (Tokenized Payload) ---");
-                console.log(submissionData);
-
-                const submissionMessage = `Assessment submitted successfully!
-Score: ${finalScore.percentageScore}%
-This score is now being hashed and anchored to the blockchain. The MSME can now use the resulting TSI Token for high-ticket credit applications.`;
-
-                // Display a success message (using alert for hackathon MVP simplicity)
-                alert(submissionMessage);
-
-                // Clear state for a new assessment (Optional)
-                // location.reload();
-            }
-        }
-
-        /**
-         * Renders the entire assessment form based on the dmaData JSON.
-         */
-        function renderAssessmentForm() {
+        function renderAssessmentForm(data) {
             const formContainer = document.getElementById('assessment-form-container');
             if (!formContainer) return;
+            formContainer.innerHTML = ''; // Clear loading message
 
-            dmaData.sections.forEach((section, sectionIndex) => {
+            totalQuestionsCount = 0;
+
+            data.sections.forEach((section, sectionIndex) => {
                 // 1. Create Section Container
                 const sectionDiv = document.createElement('div');
                 sectionDiv.className = 'mb-10 p-6 card';
@@ -375,6 +254,8 @@ This score is now being hashed and anchored to the blockchain. The MSME can now 
 
                 // 3. Render Questions
                 section.questions.forEach((question, questionIndex) => {
+                    totalQuestionsCount++;
+
                     const questionDiv = document.createElement('div');
                     questionDiv.className = 'mb-6 p-4 border rounded-lg bg-gray-50';
 
@@ -420,7 +301,7 @@ This score is now being hashed and anchored to the blockchain. The MSME can now 
         }
 
         // Run the rendering function when the window loads
-        window.onload = renderAssessmentForm;
+        window.onload = fetchQuestionnaire;
     </script>
 </head>
 <body class="p-8">
@@ -430,21 +311,20 @@ This score is now being hashed and anchored to the blockchain. The MSME can now 
         <div class="flex items-center justify-center mb-4">
             <h1 class="text-4xl font-extrabold primary-text">TSI Ratings</h1>
         </div>
-        <p class="text-xl font-semibold text-gray-700 mb-1">Digital Maturity Assessment (DMA)</p>
+        <p class="text-xl font-semibold text-gray-700 mb-1" id="questionnaire-title">Digital Maturity Assessment (DMA)</p>
         <p class="text-sm text-gray-500">MSME: **Shakti Textiles & Exports** | Assessor: Alex Johnson</p>
     </header>
 
     <main>
         <form id="dma-form" onsubmit="event.preventDefault();">
-            <!-- Assessment Sections will be injected here -->
             <div id="assessment-form-container">
-                <!-- Dynamic content loads here -->
+                <div class="text-center p-12 card text-gray-500 font-semibold" id="loading-message">
+                    Loading Digital Maturity Questionnaire... Please wait.
+                </div>
             </div>
 
-            <!-- Submission and Result Area -->
             <div class="sticky bottom-0 p-4 mt-6 card flex justify-between items-center z-10">
                 <div id="result-message" class="text-lg font-bold hidden px-4 py-2 rounded-lg bg-red-100 text-red-600 transition-opacity duration-300">
-                    <!-- Score or Error message appears here -->
                 </div>
 
                 <div class="flex space-x-4 ml-auto">
