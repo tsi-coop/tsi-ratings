@@ -9,7 +9,6 @@
         :root {
             --tsi-primary: #006A67; /* Primary Dark Teal Color */
             --background: #f4fbf9; /* Light, clean background */
-            --accent-green: #2ecc71;
             --accent-yellow: #f39c12;
             --accent-red: #e74c3c;
         }
@@ -56,11 +55,12 @@
         /* Status Tags */
         .status-tag {
             padding: 0.25rem 0.75rem;
-            border-radius: 9999px; /* full rounded */
+            border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 600;
         }
         .status-pending { background-color: #fef3c7; color: #d97706; } /* Yellow */
+        .status-audited { background-color: #d1fae5; color: #059669; } /* Green */
         .status-submitted { background-color: #d1fae5; color: #059669; } /* Green */
         .status-anchored { background-color: #bfdbfe; color: #1d4ed8; } /* Blue */
         .status-expired { background-color: #fee2e2; color: #ef4444; } /* Red */
@@ -75,6 +75,119 @@
                 }
             }
         }
+
+        const DMA_API_URL = '/api/v1/dma';
+        const AUTH_TOKEN = localStorage.getItem('token');
+
+        /**
+         * Utility to map status strings to CSS classes.
+         */
+        function getStatusClass(status) {
+            switch (status.toUpperCase()) {
+                case 'PENDING':
+                    return 'status-pending';
+                case 'AUDITED':
+                case 'SUBMITTED':
+                    return 'status-submitted';
+                case 'ANCHORED':
+                    return 'status-anchored';
+                case 'EXPIRED':
+                    return 'status-expired';
+                default:
+                    return 'bg-gray-200 text-gray-700';
+            }
+        }
+
+        /**
+         * Generates the appropriate action link based on assessment status.
+         */
+        function generateActionLink(assessment) {
+            const id = assessment.assessmentId;
+            const status = assessment.status.toUpperCase();
+
+            if (status === 'PENDING') {
+                return `<a href="dma-assessment.html?assessmentId=${id}" class="primary-text hover:underline font-medium">Continue Audit</a>`;
+            } else if (status === 'AUDITED' || status === 'SUBMITTED') {
+                // If AUDITED (Submitted but not yet anchored), allow preview/finalization from list
+                return `<a href="assessment-preview.html?assessmentId=${id}" class="text-green-600 hover:underline font-medium">Preview & Finalize</a>`;
+            } else if (status === 'ANCHORED') {
+                return `<a href="blockchain-proof.html?assessmentId=${id}" class="primary-text hover:underline font-medium">View Proof</a>`;
+            } else if (status === 'EXPIRED') {
+                return `<a href="dma-assessment.html?assessmentId=0&msmeId=${assessment.msmeId}" class="text-red-500 hover:underline font-medium">Start New Re-Audit</a>`;
+            }
+            return `<span class="text-gray-500">N/A</span>`;
+        }
+
+        /**
+         * Renders the assessment list table dynamically.
+         */
+        function renderAssessmentList(assessments) {
+            const tbody = document.getElementById('assessment-list-body');
+            tbody.innerHTML = '';
+
+            if (!assessments || assessments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No assessments found. Start a New DMA to begin.</td></tr>`;
+                return;
+            }
+
+            assessments.forEach(assessment => {
+                const row = document.createElement('tr');
+                const scoreDisplay = assessment.finalTsiScore ? parseFloat(assessment.finalTsiScore).toFixed(2) : '—';
+                const statusClass = getStatusClass(assessment.status);
+
+                // Assuming assessmentId in DB is BIGINT, prepending a string for display context
+                const displayId = `TSI-DMA-${assessment.assessmentId}`;
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${displayId}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${assessment.companyName || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(assessment.assignmentDate).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${assessment.finalTsiScore ? 'text-tsi-primary' : 'text-gray-500'}">${scoreDisplay}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="status-tag ${statusClass}">${assessment.status.toUpperCase()}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                        ${generateActionLink(assessment)}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        /**
+         * Fetches the list of assessments from the backend.
+         */
+        async function fetchAssessmentData() {
+            const tbody = document.getElementById('assessment-list-body');
+            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading assessment records...</td></tr>`;
+
+            try {
+                const response = await fetch(DMA_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${AUTH_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        _func: 'get_assessment_list', // Assumed backend function
+                        auditorId: 8
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success && data.data) {
+                    renderAssessmentList(data.data);
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading data: ${data.error_message || 'Unknown API Error'}</td></tr>`;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Network Error. Could not connect to the server.</td></tr>`;
+            }
+        }
+
+        window.onload = fetchAssessmentData;
     </script>
 </head>
 <body class="flex h-screen">
@@ -115,7 +228,7 @@
             <p class="text-gray-500">View all Digital Maturity Assessments (DMA) assigned and completed.</p>
         </header>
 
-        <a href="dma-assessment.html" class="primary-bg text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:opacity-90 transition duration-150 flex items-center">
+        <a href="dma-assessment.html?assessmentId=0" class="primary-bg text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:opacity-90 transition duration-150 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             New DMA
         </a>
@@ -135,60 +248,7 @@
                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                 </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">TSI-DMA-8012</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Shakti Textiles & Exports</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Oct 28, 2025</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">—</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="status-tag status-pending">PENDING AUDIT</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
-                        <a href="#" class="primary-text hover:underline">Continue Audit</a>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">TSI-DMA-7955</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">FutureSoft IT Solutions</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Oct 05, 2025</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">81.50</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="status-tag status-submitted">SUBMITTED</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
-                        <a href="#" class="text-gray-500 hover:underline">View Report</a>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">TSI-DMA-7521</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">EcoBuild Materials Corp</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sep 15, 2025</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-tsi-primary">92.10</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="status-tag status-anchored">ANCHORED</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
-                        <a href="#" class="primary-text hover:underline">View Proof</a>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">TSI-DMA-6110</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Global Traders Inc.</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Mar 01, 2024</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-500">77.30</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="status-tag status-expired">EXPIRED</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
-                        <a href="#" class="text-red-500 hover:underline">Recommend Re-Audit</a>
-                    </td>
-                </tr>
-
+                <tbody class="bg-white divide-y divide-gray-200" id="assessment-list-body">
                 </tbody>
             </table>
         </div>

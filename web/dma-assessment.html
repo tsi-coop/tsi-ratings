@@ -61,7 +61,7 @@
         // --- Global State & Placeholders ---
         // Get assessmentId from URL parameter (e.g., ?assessmentId=8012)
         const urlParams = new URLSearchParams(window.location.search);
-        const CURRENT_ASSESSMENT_ID = urlParams.get('assessmentId') || 0;
+        const CURRENT_ASSESSMENT_ID = parseInt(urlParams.get('assessmentId')) || 0;
 
         // Placeholder values for display (Should be fetched with saved data)
         const CURRENT_MSME_NAME = "Shakti Textiles & Exports";
@@ -92,14 +92,6 @@
             }
 
             resultElement.textContent = message;
-        }
-
-        /**
-         * Toggles the disabled state of the control buttons.
-         */
-        function toggleButtons(disableSave, disableReview) {
-            document.getElementById('save-assessment-btn').disabled = disableSave;
-            document.getElementById('review-score-btn').disabled = disableReview;
         }
 
         /**
@@ -161,7 +153,7 @@
                         'Authorization': `Bearer ${AUTH_TOKEN}`
                     },
                     body: JSON.stringify({
-                        _func: 'get_saved_assessment_data', // Assumed backend function
+                        _func: 'get_dma_assessment_details', // Assumed backend function
                         assessmentId: CURRENT_ASSESSMENT_ID
                     })
                 });
@@ -178,22 +170,7 @@
                     if (savedData.finalTsiScore) {
                         lastCalculatedScore = savedData.finalTsiScore;
                     }
-                    if (savedData.status === 'AUDITED' || savedData.status === 'ANCHORED') {
-                        isFinalized = true;
-                    }
-
-                    // 2. Pre-populate the form elements
-                    prepopulateForm(savedData);
-
-                    showResultMessage(`Assessment data loaded. Status: ${savedData.status}. Score: ${lastCalculatedScore || 'N/A'}`, 'success');
-
-                    // 3. Lock controls if finalized
-                    if (isFinalized) {
-                        showResultMessage(`This assessment is finalized (${savedData.status}). Edits are disabled.`, 'error');
-                        toggleButtons(true, true);
-                        document.getElementById('qualitative-notes').disabled = true;
-                    }
-
+                    showResultMessage(`Assessment data loaded. Make revisions.`);
                 } else if (response.status === 404) {
                     showResultMessage('Assessment not found. Starting a new assessment.', 'info');
                 } else {
@@ -205,39 +182,14 @@
             }
         }
 
-        /**
-         * Pre-populates form elements using the fetched data.
-         * @param {object} savedData - Data retrieved from the backend.
-         */
-        function prepopulateForm(savedData) {
-            // Pre-populate Radio Buttons
-            for (const qId in assessmentResults) {
-                const value = assessmentResults[qId];
-                const inputElement = document.getElementById(`${qId}-${value}`);
-                if (inputElement) {
-                    inputElement.checked = true;
-                    // Trigger change to update the radio label styling
-                    inputElement.dispatchEvent(new Event('change'));
-                }
-            }
-
-            // Pre-populate Qualitative Notes
-            let notes = '';
-            if (savedData.assessmentDetailJson && savedData.assessmentDetailJson.auditorNotes) {
-                notes = savedData.assessmentDetailJson.auditorNotes;
-            } else if (savedData.qualitativeNotes) { // Fallback if backend flattens the field
-                notes = savedData.qualitativeNotes;
-            }
-            document.getElementById('qualitative-notes').value = notes;
-
-            // Check current completeness level to enable/disable Review
-            toggleButtons(false, !areAllQuestionsAnswered());
-        }
-
 
         // --- API Integration (CRUD Operations) ---
 
         async function fetchQuestionnaire() {
+            if (CURRENT_ASSESSMENT_ID !== 0) {
+                fetchSavedAssessmentData();
+            }
+
             showResultMessage('Loading questionnaire...', 'info');
 
             try {
@@ -259,15 +211,6 @@
                     dmaQuestionnaire = data.data;
                     renderAssessmentForm(dmaQuestionnaire);
                     showResultMessage('Questionnaire template loaded.', 'info');
-
-                    // After rendering, if we are editing an existing assessment, load the saved data
-                    if (CURRENT_ASSESSMENT_ID !== 0) {
-                        await fetchSavedAssessmentData();
-                    } else {
-                        // For new assessments, only save is enabled
-                        toggleButtons(false, true);
-                    }
-
                 } else {
                     const errorMsg = data.error_details || data.error_message || 'Failed to retrieve questionnaire template.';
                     showResultMessage(errorMsg, 'error');
@@ -320,10 +263,8 @@
                     if (isReview) {
                          showResultMessage(`Official Final Score: ${newScore}%. Ready for Preview and Finalization.`, 'success');
                     } else {
-                         showResultMessage(`Assessment progress saved. Score: ${newScore}%`, 'success');
+                         showResultMessage(`Assessment progress saved.`, 'success');
                     }
-                    // Enable both buttons after a successful save (Review is only enabled if all answered)
-                    toggleButtons(false, !areAllQuestionsAnswered());
                 } else {
                     const errorMsg = data.error_details || data.error_message || 'Failed to save/review assessment. Check network.';
                     showResultMessage(errorMsg, 'error');
@@ -349,6 +290,7 @@
             formContainer.innerHTML = '';
             totalQuestionsCount = 0;
 
+            // Set header info
             document.getElementById('questionnaire-title').textContent = data.questionnaireTitle;
             document.getElementById('header-info').innerHTML = `MSME: <strong>${CURRENT_MSME_NAME}</strong> | Assessor: <strong>${CURRENT_AUDITOR_NAME}</strong> | Assessment ID: <strong>${CURRENT_ASSESSMENT_ID}</strong> | Version: <strong>${data.version}</strong>`;
 
@@ -363,6 +305,9 @@
 
                 section.questions.forEach((question, questionIndex) => {
                     totalQuestionsCount++;
+
+                    // Look up the previously saved value for this question
+                    const savedValue = assessmentResults[question.questionId];
 
                     const questionDiv = document.createElement('div');
                     questionDiv.className = 'mb-6 p-4 border rounded-lg bg-gray-50';
@@ -387,11 +332,15 @@
                         input.value = option.value;
                         input.className = 'radio-option h-4 w-4 text-tsi-primary border-gray-300 mr-2 focus:ring-tsi-primary';
 
+                        // --- AUTOFILL LOGIC ADDED HERE ---
+                        console.log(savedValue);
+                        if (savedValue !== undefined && parseInt(input.value) === savedValue) {
+                            input.checked = true;
+                        }
+
                         input.addEventListener('change', (e) => {
                             assessmentResults[question.questionId] = parseInt(e.target.value);
                             document.getElementById('result-message').classList.add('hidden');
-                            // Always enable Save on change. Only enable Review if all are answered.
-                            toggleButtons(false, !areAllQuestionsAnswered());
                         });
 
                         label.appendChild(input);
@@ -406,7 +355,7 @@
                 formContainer.appendChild(sectionDiv);
             });
 
-            // Append Qualitative Input Section
+            // Append Qualitative Input Section (Textarea population is handled by prepopulateForm() later)
             const qualitativeSection = document.createElement('div');
             qualitativeSection.className = 'mb-10 p-6 card';
             qualitativeSection.innerHTML = `
@@ -452,14 +401,9 @@
                         ← Back to List
                     </a>
 
-                    <button type="button" id="save-assessment-btn" onclick="saveAssessment(false)" disabled
+                    <button type="button" id="save-assessment-btn" onclick="saveAssessment(false)"
                             class="px-6 py-3 border border-tsi-primary bg-white text-tsi-primary rounded-lg font-semibold hover:bg-tsi-primary hover:text-white transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                         Save Assessment
-                    </button>
-
-                    <button type="button" id="review-score-btn" onclick="reviewFinalScore()" disabled
-                            class="px-6 py-3 border border-gray-400 text-gray-700 bg-gray-100 rounded-lg font-semibold hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                        Review & Save Final Score
                     </button>
                 </div>
             </div>

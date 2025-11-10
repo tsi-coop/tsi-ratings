@@ -1,5 +1,6 @@
 package org.tsicoop.ratings.service.v1;
 
+import org.json.simple.parser.JSONParser;
 import org.tsicoop.ratings.framework.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -79,6 +80,11 @@ public class DMA implements Action {
                     OutputProcessor.send(res, HttpServletResponse.SC_ACCEPTED, output);
                     break;
 
+                case "get_assessment_list":
+                    output = getAssessmentList(input);
+                    OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
+                    break;
+
                 case "get_dma_assessment_details":
                     output = getAssessmentDetails(assessmentId);
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
@@ -99,6 +105,87 @@ public class DMA implements Action {
             e.printStackTrace();
             OutputProcessor.errorResponse(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred: " + e.getMessage(), req.getRequestURI());
         }
+    }
+
+    /**
+     * Retrieves a list of all Digital Maturity Assessments (DMA) assigned to a specific auditor.
+     * The list includes relevant details from MSME and AnchorRecord tables.
+     * * @param input JSON object containing "auditorId".
+     * @return JSONObject containing success status and an array of assessment records.
+     */
+    private JSONObject getAssessmentList(JSONObject input) throws SQLException {
+        Long auditorId = null;
+        Object auditorIdObj = input.get("auditorId");
+
+        if (auditorIdObj == null) {
+            JSONObject error = new JSONObject();
+            error.put("error", true);
+            error.put("status_code", (long) HttpServletResponse.SC_BAD_REQUEST);
+            error.put("error_message", "Auditor ID is required to fetch the assessment list.");
+            return error;
+        }
+
+        try {
+            // Ensure auditorId is parsed correctly (handling String or Long input)
+            auditorId = Long.parseLong(auditorIdObj.toString());
+        } catch (NumberFormatException e) {
+            JSONObject error = new JSONObject();
+            error.put("error", true);
+            error.put("status_code", (long) HttpServletResponse.SC_BAD_REQUEST);
+            error.put("error_message", "Invalid format for auditorId.");
+            return error;
+        }
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        PoolDB pool = new PoolDB();
+
+        JSONArray assessmentArray = new JSONArray();
+        JSONObject output = new JSONObject();
+
+        // SQL Query to join DMA_Assessment with MSME (to get company name)
+        // and LEFT JOIN AnchorRecord (to see if it's been anchored)
+        String sql = "SELECT dma.\"assessmentId\", dma.\"msmeId\", dma.\"finalTsiScore\", dma.status, dma.\"completionDate\", " +
+                "m.\"companyName\", " +
+                "ar.\"blockchainTxId\" " +
+                "FROM \"DMA_Assessment\" dma " +
+                "JOIN \"MSME\" m ON dma.\"msmeId\" = m.\"msmeId\" " +
+                "LEFT JOIN \"AnchorRecord\" ar ON dma.\"assessmentId\" = ar.\"anchorId\" " +
+                "WHERE dma.\"auditorId\" = ?";
+
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setLong(1, auditorId);
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                JSONObject assessment = new JSONObject();
+
+                // Fields from DMA_Assessment and MSME
+                assessment.put("assessmentId", rs.getLong("assessmentId"));
+                assessment.put("msmeId", rs.getLong("msmeId"));
+                assessment.put("companyName", rs.getString("companyName"));
+                assessment.put("status", rs.getString("status"));
+
+                // Conditional Fields
+                assessment.put("finalTsiScore", rs.getObject("finalTsiScore") != null ? rs.getDouble("finalTsiScore") : null);
+                assessment.put("completionDate", rs.getTimestamp("completionDate") != null ? rs.getTimestamp("completionDate").toInstant().toString() : null);
+
+                // Anchor Status (from LEFT JOIN)
+                assessment.put("isAnchored", rs.getString("blockchainTxId") != null);
+
+                assessmentArray.add(assessment);
+            }
+
+            output.put("success", true);
+            output.put("data", assessmentArray);
+
+        } finally {
+            pool.cleanup(rs, pstmt, conn);
+        }
+        return output;
     }
 
     // ------------------------------------------
@@ -386,21 +473,79 @@ public class DMA implements Action {
     }
 
 
-    // The rest of the functions (getAssessmentDetails, validateAssessment, callExpressService) remain the same
-    // as they were provided in the original input block from the previous turn, but simplified here
-    // for brevity since the request focused on Save/Finalize.
-    // The original `submitAssessment` function (now `anchorAssessment` in logic) is contained within `finalizeAssessment`.
+    /**
+     * Retrieves the comprehensive details of a single DMA assessment.
+     * The list includes data from the DMA_Assessment table, the MSME (company name),
+     * the User (auditor email), and the AnchorRecord (blockchain proof) if available.
+     */
+    private JSONObject getAssessmentDetails(Long assessmentId) throws Exception {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        PoolDB pool = new PoolDB();
+        JSONObject result = new JSONObject();
 
-    // [NOTE: The full implementations of getAssessmentDetails, validateAssessment, and callExpressService
-    // are omitted here for conciseness but would be included in the final compiled class.]
+        if (assessmentId == null || assessmentId.longValue() <= 0) {
+            result.put("error", true);
+            result.put("status_code", (long) HttpServletResponse.SC_BAD_REQUEST);
+            result.put("error_message", "Invalid Assessment ID provided.");
+            return result;
+        }
 
-    // ... (omitted: getAssessmentDetails, validateAssessment, callExpressService implementations)
+        // SQL Query to join DMA_Assessment with MSME, User (Auditor), and LEFT JOIN AnchorRecord
+        String sql = "SELECT dma.\"assessmentId\", dma.\"msmeId\", dma.\"finalTsiScore\", dma.status, dma.\"completionDate\", dma.\"requestFormJson\", dma.\"assessmentDetailJson\", " +
+                "ar.\"blockchainTxId\", ar.\"tsiHash\", ar.\"anchorDate\", " +
+                "u.email AS auditor_email, m.\"companyName\" AS msme_name, m.\"udyamRegistrationNo\" " +
+                "FROM \"DMA_Assessment\" dma " +
+                "JOIN \"User\" u ON dma.\"auditorId\" = u.\"userId\" " +
+                "JOIN \"MSME\" m ON dma.\"msmeId\" = m.\"msmeId\" " +
+                "LEFT JOIN \"AnchorRecord\" ar ON dma.\"assessmentId\" = ar.\"anchorId\" " +
+                "WHERE dma.\"assessmentId\" = ?";
 
-    // Placeholder for simplified functions not requiring full re-implementation
-    private JSONObject getAssessmentDetails(Long assessmentId) throws SQLException {
-        /* ... */
-        return new JSONObject();
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setLong(1, assessmentId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // --- Core Assessment Data ---
+                result.put("assessmentId", rs.getLong("assessmentId"));
+                result.put("msmeId", rs.getLong("msmeId"));
+                result.put("finalTsiScore", rs.getObject("finalTsiScore") != null ? rs.getDouble("finalTsiScore") : null);
+                result.put("status", rs.getString("status"));
+                result.put("completionDate", rs.getTimestamp("completionDate") != null ? rs.getTimestamp("completionDate").toInstant().toString() : null);
+
+                // --- MSME & Auditor Data ---
+                result.put("msmeName", rs.getString("msme_name"));
+                result.put("udyamRegistrationNo", rs.getString("udyamRegistrationNo"));
+                result.put("auditorEmail", rs.getString("auditor_email"));
+
+                // --- Assessment Payload Data (JSONB) ---
+                String assessmentDetailJsonString = rs.getString("assessmentDetailJson");
+                if (assessmentDetailJsonString != null) {
+                     result.put("assessmentDetailJson", new JSONParser().parse(assessmentDetailJsonString));
+                    //result.put("assessmentDetailJson", assessmentDetailJsonString);
+                }
+
+                // --- Anchor Record Data (Proof of Immutability) ---
+                if (rs.getString("blockchainTxId") != null) {
+                    JSONObject anchor = new JSONObject();
+                    anchor.put("blockchainTxId", rs.getString("blockchainTxId"));
+                    anchor.put("tsiHash", rs.getString("tsiHash"));
+                    anchor.put("anchorDate", rs.getTimestamp("anchorDate").toInstant().toString());
+                    result.put("anchorRecord", anchor);
+                }
+            } else {
+                throw new SQLException("Assessment not found for ID: " + assessmentId);
+            }
+
+        } finally {
+            pool.cleanup(rs, pstmt, conn);
+        }
+        return new JSONObject() {{ put("success", true); put("data", result); }};
     }
+
     private JSONObject validateAssessment(JSONObject input) throws Exception { /* ... */ return new JSONObject(); }
     private JSONObject callExpressService(String urlString, JSONObject payload) throws Exception {
         // Mock response for callExpressService
