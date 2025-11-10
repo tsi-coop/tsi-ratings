@@ -38,6 +38,10 @@
             color: var(--tsi-primary);
             font-weight: 600;
         }
+
+        .sticky-footer {
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
     </style>
     <script>
         tailwind.config = {
@@ -54,42 +58,189 @@
         // --- API Endpoint Definition ---
         const DMA_API_URL = '/api/v1/dma';
 
-        // Global state
+        // --- Global State & Placeholders ---
+        // Get assessmentId from URL parameter (e.g., ?assessmentId=8012)
+        const urlParams = new URLSearchParams(window.location.search);
+        const CURRENT_ASSESSMENT_ID = urlParams.get('assessmentId') || 0;
+
+        // Placeholder values for display (Should be fetched with saved data)
+        const CURRENT_MSME_NAME = "Shakti Textiles & Exports";
+        const CURRENT_AUDITOR_NAME = "Alex Johnson";
+
         let dmaQuestionnaire = null;
-        const assessmentResults = {};
-        let totalQuestionsCount = 0; // Will be set after fetching
+        let assessmentResults = {}; // Will hold Q-ID -> Value map
+        let totalQuestionsCount = 0;
+        let lastCalculatedScore = null;
+        let isFinalized = false;
 
         // --- Utility Functions ---
 
         /**
          * Shows a message to the user in the result area.
-         * @param {string} message - The message text.
-         * @param {string} type - 'success', 'error', 'info', or 'default'.
          */
         function showResultMessage(message, type = 'default') {
             const resultElement = document.getElementById('result-message');
-            resultElement.classList.remove('hidden', 'bg-red-100', 'text-red-600', 'bg-green-100', 'text-green-600');
+            resultElement.classList.remove('hidden', 'bg-red-100', 'text-red-600', 'bg-green-100', 'text-green-600', 'bg-blue-100', 'text-blue-600');
             resultElement.classList.add('transition-opacity', 'duration-300');
 
             if (type === 'error') {
                 resultElement.classList.add('bg-red-100', 'text-red-600');
             } else if (type === 'success') {
                 resultElement.classList.add('bg-green-100', 'text-green-600');
+            } else { // info/default
+                resultElement.classList.add('bg-blue-100', 'text-blue-600');
             }
 
             resultElement.textContent = message;
         }
 
-        // --- API Integration ---
+        /**
+         * Toggles the disabled state of the control buttons.
+         */
+        function toggleButtons(disableSave, disableReview) {
+            document.getElementById('save-assessment-btn').disabled = disableSave;
+            document.getElementById('review-score-btn').disabled = disableReview;
+        }
 
         /**
-         * Fetches the DMA questionnaire template from the backend.
+         * Retrieves data required for API calls.
          */
+        function getAssessmentPayload(currentScore) {
+            const qualitativeNotes = document.getElementById('qualitative-notes').value;
+
+            const payload = {
+                assessmentId: CURRENT_ASSESSMENT_ID,
+                msmeId: 10,
+                auditorId: 8,
+                qualitativeNotes: qualitativeNotes,
+                finalTsiScore: currentScore,
+                assessmentDetailJson: {
+                    version: dmaQuestionnaire ? dmaQuestionnaire.version : 'v1.0',
+                    results: assessmentResults
+                }
+            };
+
+            if (dmaQuestionnaire) {
+                payload.version = dmaQuestionnaire.version;
+            }
+
+            return payload;
+        }
+
+        // --- Core Validation Functions ---
+
+        /**
+         * Checks if all questions have been answered.
+         */
+        function areAllQuestionsAnswered() {
+            if (!dmaQuestionnaire) return false;
+
+            let answeredQuestions = Object.keys(assessmentResults).length;
+
+            if (answeredQuestions !== totalQuestionsCount) {
+                showResultMessage(`Progress: ${answeredQuestions}/${totalQuestionsCount} questions answered. Full score calculation requires all questions to be answered.`, 'info');
+                return false;
+            }
+
+            return true;
+        }
+
+        // --- Data Fetching and Pre-population ---
+
+        /**
+         * Fetches previously saved answers and qualitative input for editing.
+         */
+        async function fetchSavedAssessmentData() {
+            showResultMessage(`Loading saved data for Assessment ID: ${CURRENT_ASSESSMENT_ID}...`, 'info');
+
+            try {
+                const response = await fetch(DMA_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${AUTH_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        _func: 'get_saved_assessment_data', // Assumed backend function
+                        assessmentId: CURRENT_ASSESSMENT_ID
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success && data.data) {
+                    const savedData = data.data;
+
+                    // 1. Update global state with saved data
+                    if (savedData.assessmentDetailJson && savedData.assessmentDetailJson.results) {
+                        assessmentResults = savedData.assessmentDetailJson.results;
+                    }
+                    if (savedData.finalTsiScore) {
+                        lastCalculatedScore = savedData.finalTsiScore;
+                    }
+                    if (savedData.status === 'AUDITED' || savedData.status === 'ANCHORED') {
+                        isFinalized = true;
+                    }
+
+                    // 2. Pre-populate the form elements
+                    prepopulateForm(savedData);
+
+                    showResultMessage(`Assessment data loaded. Status: ${savedData.status}. Score: ${lastCalculatedScore || 'N/A'}`, 'success');
+
+                    // 3. Lock controls if finalized
+                    if (isFinalized) {
+                        showResultMessage(`This assessment is finalized (${savedData.status}). Edits are disabled.`, 'error');
+                        toggleButtons(true, true);
+                        document.getElementById('qualitative-notes').disabled = true;
+                    }
+
+                } else if (response.status === 404) {
+                    showResultMessage('Assessment not found. Starting a new assessment.', 'info');
+                } else {
+                    showResultMessage('Failed to load saved assessment data.', 'error');
+                }
+            } catch (error) {
+                console.error('Fetch saved data error:', error);
+                showResultMessage('Network error during data retrieval.', 'error');
+            }
+        }
+
+        /**
+         * Pre-populates form elements using the fetched data.
+         * @param {object} savedData - Data retrieved from the backend.
+         */
+        function prepopulateForm(savedData) {
+            // Pre-populate Radio Buttons
+            for (const qId in assessmentResults) {
+                const value = assessmentResults[qId];
+                const inputElement = document.getElementById(`${qId}-${value}`);
+                if (inputElement) {
+                    inputElement.checked = true;
+                    // Trigger change to update the radio label styling
+                    inputElement.dispatchEvent(new Event('change'));
+                }
+            }
+
+            // Pre-populate Qualitative Notes
+            let notes = '';
+            if (savedData.assessmentDetailJson && savedData.assessmentDetailJson.auditorNotes) {
+                notes = savedData.assessmentDetailJson.auditorNotes;
+            } else if (savedData.qualitativeNotes) { // Fallback if backend flattens the field
+                notes = savedData.qualitativeNotes;
+            }
+            document.getElementById('qualitative-notes').value = notes;
+
+            // Check current completeness level to enable/disable Review
+            toggleButtons(false, !areAllQuestionsAnswered());
+        }
+
+
+        // --- API Integration (CRUD Operations) ---
+
         async function fetchQuestionnaire() {
             showResultMessage('Loading questionnaire...', 'info');
 
             try {
-                // Assuming a POST request with _func to get the template
                 const response = await fetch(DMA_API_URL, {
                     method: 'POST',
                     headers: {
@@ -98,16 +249,25 @@
                     },
                     body: JSON.stringify({
                         _func: 'get_dma_questionnaire',
-                        version: 'v1.0'
+                        version: 'v1'
                     })
                 });
 
                 const data = await response.json();
 
-                if (response.ok && data) {
-                    dmaQuestionnaire = data;
+                if (response.ok && data.success && data.data) {
+                    dmaQuestionnaire = data.data;
                     renderAssessmentForm(dmaQuestionnaire);
-                    showResultMessage(dmaQuestionnaire.questionnaireTitle + ' loaded successfully.', 'info');
+                    showResultMessage('Questionnaire template loaded.', 'info');
+
+                    // After rendering, if we are editing an existing assessment, load the saved data
+                    if (CURRENT_ASSESSMENT_ID !== 0) {
+                        await fetchSavedAssessmentData();
+                    } else {
+                        // For new assessments, only save is enabled
+                        toggleButtons(false, true);
+                    }
+
                 } else {
                     const errorMsg = data.error_details || data.error_message || 'Failed to retrieve questionnaire template.';
                     showResultMessage(errorMsg, 'error');
@@ -119,153 +279,99 @@
         }
 
         /**
-         * Simulates the submission of the final score and data to the blockchain anchor system.
+         * Saves the current assessment status, score, and qualitative input (API: saveassessment).
          */
-        async function submitAssessment() {
-            const finalScore = calculateScore(true); // Calculate score and stop if questions are missing
+        async function saveAssessment(isReview = false) {
+            if (isFinalized) return;
 
-            if (!finalScore) return; // Stop if not all questions are answered
+            const saveButton = document.getElementById('save-assessment-btn');
 
-            // Disable buttons during submission
-            const submitButton = document.querySelector('button[onclick="submitAssessment()"]');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Submitting...';
+            // Gating check for review
+            if (isReview && !areAllQuestionsAnswered()) {
+                return;
+            }
 
-            showResultMessage('Submitting assessment and preparing for blockchain anchoring...', 'info');
+            // 2. Prepare payload
+            const payload = getAssessmentPayload(lastCalculatedScore);
 
-            // --- API CALL: submitAssessment ---
+            saveButton.disabled = true;
+            saveButton.textContent = isReview ? 'Reviewing...' : 'Saving...';
+            showResultMessage(isReview ? 'Requesting final score from backend...' : 'Saving assessment progress...', 'info');
+
             try {
-                // Note: The payload must match the DMA_Assessment table structure (assessmentDetailJson)
-                const submissionPayload = {
-                    _func: 'submitAssessment', // Assumed function name
-                    msmeId: 101, // Placeholder: Must be retrieved from session/context
-                    auditorId: 201, // Placeholder: Must be retrieved from session/context
-                    finalTsiScore: finalScore.percentageScore,
-                    assessmentDetailJson: {
-                        version: finalScore.version,
-                        results: finalScore.answers
-                    }
-                };
-
                 const response = await fetch(DMA_API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(submissionPayload)
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${AUTH_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        _func: 'save_assessment',
+                        ...payload
+                    })
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    showResultMessage(`Assessment submitted successfully! Score: ${finalScore.percentageScore}%. Anchor ID: ${data.anchorId}.`, 'success');
+                    const newScore = data.data.finalTsiScore;
+                    lastCalculatedScore = newScore;
 
-                    // Update button state to Submitted (read-only)
-                    submitButton.textContent = 'Assessment Submitted';
-                    submitButton.classList.remove('primary-bg');
-                    submitButton.classList.add('bg-gray-500');
-                    document.querySelector('button[onclick="calculateScore()"]').disabled = true;
+                    if (isReview) {
+                         showResultMessage(`Official Final Score: ${newScore}%. Ready for Preview and Finalization.`, 'success');
+                    } else {
+                         showResultMessage(`Assessment progress saved. Score: ${newScore}%`, 'success');
+                    }
+                    // Enable both buttons after a successful save (Review is only enabled if all answered)
+                    toggleButtons(false, !areAllQuestionsAnswered());
                 } else {
-                    const errorMsg = data.error_details || data.error_message || 'Submission failed. Please try again.';
+                    const errorMsg = data.error_details || data.error_message || 'Failed to save/review assessment. Check network.';
                     showResultMessage(errorMsg, 'error');
                 }
             } catch (error) {
-                console.error('Submission error:', error);
-                showResultMessage('Network error. Could not connect to submit the assessment.', 'error');
+                console.error('Save error:', error);
+                showResultMessage('Network error. Could not connect to save assessment.', 'error');
             } finally {
-                if(submitButton.textContent === 'Submitting...') {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Submit & Anchor to Blockchain';
-                }
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Assessment';
             }
         }
 
-        // --- Core Functions ---
-
-        /**
-         * Calculates the total TSI Score based on the selected answers.
-         * @param {boolean} stopIfIncomplete - If true, displays an error and returns null if not all questions are answered.
-         */
-        function calculateScore(stopIfIncomplete = false) {
-            if (!dmaQuestionnaire) {
-                showResultMessage('Error: Questionnaire data is not loaded.', 'error');
-                return null;
-            }
-
-            let totalScore = 0;
-            let maxScore = 0;
-            let answeredQuestions = 0;
-
-            dmaQuestionnaire.sections.forEach(section => {
-                section.questions.forEach(question => {
-                    maxScore += 5; // Max score for each question is 5
-
-                    const selectedValue = assessmentResults[question.questionId];
-                    if (selectedValue !== undefined) {
-                        totalScore += selectedValue;
-                        answeredQuestions++;
-                    }
-                });
-            });
-
-            // Check if all questions are answered
-            if (answeredQuestions !== totalQuestionsCount) {
-                if (stopIfIncomplete) {
-                    showResultMessage(`Please answer all ${totalQuestionsCount} questions (${answeredQuestions} answered) before submission.`, 'error');
-                    return null;
-                }
-                showResultMessage(`Incomplete: ${answeredQuestions}/${totalQuestionsCount} questions answered.`, 'info');
-                return null;
-            }
-
-            // Calculate percentage score (0-100)
-            const percentageScore = (totalScore / maxScore) * 100;
-
-            showResultMessage(`Final DMA Score: ${percentageScore.toFixed(2)}% (Total Points: ${totalScore} / ${maxScore})`, 'success');
-
-            return {
-                version: dmaQuestionnaire.version,
-                totalScore: totalScore,
-                maxScore: maxScore,
-                percentageScore: percentageScore.toFixed(2),
-                answers: assessmentResults
-            };
+        function reviewFinalScore() {
+            saveAssessment(true);
         }
 
         /**
          * Renders the entire assessment form based on the fetched dmaData JSON.
-         * @param {object} data - The fetched questionnaire object.
          */
         function renderAssessmentForm(data) {
             const formContainer = document.getElementById('assessment-form-container');
-            if (!formContainer) return;
-            formContainer.innerHTML = ''; // Clear loading message
-
+            formContainer.innerHTML = '';
             totalQuestionsCount = 0;
 
+            document.getElementById('questionnaire-title').textContent = data.questionnaireTitle;
+            document.getElementById('header-info').innerHTML = `MSME: <strong>${CURRENT_MSME_NAME}</strong> | Assessor: <strong>${CURRENT_AUDITOR_NAME}</strong> | Assessment ID: <strong>${CURRENT_ASSESSMENT_ID}</strong> | Version: <strong>${data.version}</strong>`;
+
             data.sections.forEach((section, sectionIndex) => {
-                // 1. Create Section Container
                 const sectionDiv = document.createElement('div');
                 sectionDiv.className = 'mb-10 p-6 card';
 
-                // 2. Create Section Title
                 const sectionTitle = document.createElement('h2');
                 sectionTitle.className = 'text-xl font-bold primary-text mb-6 pb-2 border-b border-gray-200';
                 sectionTitle.textContent = `${section.sectionId}. ${section.sectionTitle}`;
                 sectionDiv.appendChild(sectionTitle);
 
-                // 3. Render Questions
                 section.questions.forEach((question, questionIndex) => {
                     totalQuestionsCount++;
 
                     const questionDiv = document.createElement('div');
                     questionDiv.className = 'mb-6 p-4 border rounded-lg bg-gray-50';
 
-                    // Question Text
                     const questionText = document.createElement('p');
                     questionText.className = 'text-base font-semibold text-gray-800 mb-3';
                     questionText.textContent = `${question.questionId}. ${question.questionText}`;
                     questionDiv.appendChild(questionText);
 
-                    // Options Container
                     const optionsDiv = document.createElement('div');
                     optionsDiv.className = 'flex flex-wrap gap-3';
 
@@ -281,10 +387,11 @@
                         input.value = option.value;
                         input.className = 'radio-option h-4 w-4 text-tsi-primary border-gray-300 mr-2 focus:ring-tsi-primary';
 
-                        // Event listener to track the score immediately
                         input.addEventListener('change', (e) => {
                             assessmentResults[question.questionId] = parseInt(e.target.value);
-                            document.getElementById('result-message').classList.add('hidden'); // Hide message on new answer
+                            document.getElementById('result-message').classList.add('hidden');
+                            // Always enable Save on change. Only enable Review if all are answered.
+                            toggleButtons(false, !areAllQuestionsAnswered());
                         });
 
                         label.appendChild(input);
@@ -298,6 +405,18 @@
 
                 formContainer.appendChild(sectionDiv);
             });
+
+            // Append Qualitative Input Section
+            const qualitativeSection = document.createElement('div');
+            qualitativeSection.className = 'mb-10 p-6 card';
+            qualitativeSection.innerHTML = `
+                <h2 class="text-xl font-bold primary-text mb-6 pb-2 border-b border-gray-200">
+                    Auditor's Qualitative Input
+                </h2>
+                <p class="text-sm text-gray-700 mb-3">Provide your summary, observations, and justification for the scores. This will be anchored alongside the quantitative data.</p>
+                <textarea id="qualitative-notes" rows="6" class="w-full p-3 border border-gray-300 rounded-lg focus:border-tsi-primary focus:ring focus:ring-tsi-primary focus:ring-opacity-50" placeholder="Enter notes here..."></textarea>
+            `;
+            formContainer.appendChild(qualitativeSection);
         }
 
         // Run the rendering function when the window loads
@@ -312,7 +431,7 @@
             <h1 class="text-4xl font-extrabold primary-text">TSI Ratings</h1>
         </div>
         <p class="text-xl font-semibold text-gray-700 mb-1" id="questionnaire-title">Digital Maturity Assessment (DMA)</p>
-        <p class="text-sm text-gray-500">MSME: **Shakti Textiles & Exports** | Assessor: Alex Johnson</p>
+        <p class="text-sm text-gray-500" id="header-info">MSME: <strong>Shakti Textiles & Exports</strong> | Assessor: <strong>Alex Johnson</strong></p>
     </header>
 
     <main>
@@ -323,18 +442,24 @@
                 </div>
             </div>
 
-            <div class="sticky bottom-0 p-4 mt-6 card flex justify-between items-center z-10">
-                <div id="result-message" class="text-lg font-bold hidden px-4 py-2 rounded-lg bg-red-100 text-red-600 transition-opacity duration-300">
+            <div class="sticky-footer sticky bottom-0 p-4 mt-6 card flex justify-between items-center z-10">
+                <div id="result-message" class="text-lg font-bold hidden px-4 py-2 rounded-lg transition-opacity duration-300">
                 </div>
 
                 <div class="flex space-x-4 ml-auto">
-                    <button type="button" onclick="calculateScore()"
-                            class="px-6 py-3 border border-tsi-primary text-tsi-primary rounded-lg font-semibold hover:bg-tsi-primary hover:text-white transition duration-200">
-                        Calculate Final Score
+                    <a href="auditor-assessment-list.html"
+                       class="px-6 py-3 border border-gray-400 text-gray-700 bg-white rounded-lg font-semibold hover:bg-gray-100 transition duration-200 flex items-center">
+                        ← Back to List
+                    </a>
+
+                    <button type="button" id="save-assessment-btn" onclick="saveAssessment(false)" disabled
+                            class="px-6 py-3 border border-tsi-primary bg-white text-tsi-primary rounded-lg font-semibold hover:bg-tsi-primary hover:text-white transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Save Assessment
                     </button>
-                    <button type="button" onclick="submitAssessment()"
-                            class="px-6 py-3 primary-bg text-white rounded-lg font-semibold hover:bg-opacity-90 transition duration-200">
-                        Submit & Anchor to Blockchain
+
+                    <button type="button" id="review-score-btn" onclick="reviewFinalScore()" disabled
+                            class="px-6 py-3 border border-gray-400 text-gray-700 bg-gray-100 rounded-lg font-semibold hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Review & Save Final Score
                     </button>
                 </div>
             </div>

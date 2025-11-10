@@ -367,7 +367,7 @@ public class User implements Action {
             }
 
             // 2. Insert into MSME Table if role is MSME_OWNER
-            if ("MSME_OWNER".equals(role)) {
+            if ("msme".equals(role)) {
                 if (companyName == null || udyamRegistrationNo == null || industrySector == null) {
                     throw new IllegalArgumentException("MSME_OWNER requires companyName, udyamRegistrationNo, and industrySector.");
                 }
