@@ -59,11 +59,10 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-        .status-pending { background-color: #fef3c7; color: #d97706; } /* Yellow */
-        .status-audited { background-color: #d1fae5; color: #059669; } /* Green */
-        .status-submitted { background-color: #d1fae5; color: #059669; } /* Green */
-        .status-anchored { background-color: #bfdbfe; color: #1d4ed8; } /* Blue */
-        .status-expired { background-color: #fee2e2; color: #ef4444; } /* Red */
+        .status-draft { background-color: #fef3c7; color: #d97706; } /* Yellow/Draft */
+        .status-published { background-color: #bfdbfe; color: #1d4ed8; } /* Blue/Published (Anchored) */
+        .status-ready { background-color: #d1fae5; color: #059669; } /* Green/Ready for Publish (Submitted/Audited) */
+        .status-expired { background-color: #fee2e2; color: #ef4444; } /* Red/Expired */
     </style>
     <script>
         tailwind.config = {
@@ -79,43 +78,42 @@
         const DMA_API_URL = '/api/v1/dma';
         const AUTH_TOKEN = localStorage.getItem('token');
 
-        /**
-         * Utility to map status strings to CSS classes.
+      /**
+         * Utility to map backend status strings to simplified frontend stages and CSS classes.
          */
-        function getStatusClass(status) {
-            switch (status.toUpperCase()) {
-                case 'PENDING':
-                    return 'status-pending';
-                case 'AUDITED':
-                case 'SUBMITTED':
-                    return 'status-submitted';
-                case 'ANCHORED':
-                    return 'status-anchored';
-                case 'EXPIRED':
-                    return 'status-expired';
-                default:
-                    return 'bg-gray-200 text-gray-700';
+        function getStatusDetails(status) {
+            const upperStatus = status.toUpperCase();
+
+            if (upperStatus === 'PENDING') {
+                return { name: 'DRAFT', class: 'status-draft', actions: [
+                    { type: 'edit', text: 'Edit Draft', link: (id) => `dma-assessment.html?assessmentId=${id}`, style: 'primary-text' },
+                    { type: 'publish', text: 'Publish', link: (id) => `assessment-preview.html?assessmentId=${id}`, style: 'text-green-600' }
+                ] };
             }
+            if (upperStatus === 'ANCHORED') {
+                return { name: 'PUBLISHED', class: 'status-published', actions: [
+                    { type: 'view', text: 'View Proof', link: (id) => `blockchain-proof.html?assessmentId=${id}`, style: 'primary-text' }
+                ] };
+            }
+            return { name: upperStatus, class: 'bg-gray-200 text-gray-700', actions: [] };
         }
 
-        /**
-         * Generates the appropriate action link based on assessment status.
+       /**
+         * Generates the appropriate action links based on assessment status.
          */
         function generateActionLink(assessment) {
-            const id = assessment.assessmentId;
-            const status = assessment.status.toUpperCase();
+            const details = getStatusDetails(assessment.status);
+            let html = '';
 
-            if (status === 'PENDING') {
-                return `<a href="dma-assessment.html?assessmentId=${id}" class="primary-text hover:underline font-medium">Continue Audit</a>`;
-            } else if (status === 'AUDITED' || status === 'SUBMITTED') {
-                // If AUDITED (Submitted but not yet anchored), allow preview/finalization from list
-                return `<a href="assessment-preview.html?assessmentId=${id}" class="text-green-600 hover:underline font-medium">Preview & Finalize</a>`;
-            } else if (status === 'ANCHORED') {
-                return `<a href="blockchain-proof.html?assessmentId=${id}" class="primary-text hover:underline font-medium">View Proof</a>`;
-            } else if (status === 'EXPIRED') {
-                return `<a href="dma-assessment.html?assessmentId=0&msmeId=${assessment.msmeId}" class="text-red-500 hover:underline font-medium">Start New Re-Audit</a>`;
-            }
-            return `<span class="text-gray-500">N/A</span>`;
+            details.actions.forEach(action => {
+                const link = action.link(assessment.assessmentId, assessment.msmeId);
+                const separator = html ? ' | ' : '';
+
+                // For PENDING status, use a | separator for Edit and Publish
+                html += `${separator}<a href="${link}" class="${action.style} hover:underline font-medium">${action.text}</a>`;
+            });
+
+            return html;
         }
 
         /**
@@ -126,25 +124,23 @@
             tbody.innerHTML = '';
 
             if (!assessments || assessments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No assessments found. Start a New DMA to begin.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No assessments found. Start a New DMA to begin.</td></tr>`;
                 return;
             }
 
             assessments.forEach(assessment => {
                 const row = document.createElement('tr');
                 const scoreDisplay = assessment.finalTsiScore ? parseFloat(assessment.finalTsiScore).toFixed(2) : '—';
-                const statusClass = getStatusClass(assessment.status);
+                const statusDetails = getStatusDetails(assessment.status);
 
-                // Assuming assessmentId in DB is BIGINT, prepending a string for display context
                 const displayId = `TSI-DMA-${assessment.assessmentId}`;
 
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${displayId}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${assessment.companyName || 'N/A'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(assessment.assignmentDate).toLocaleDateString()}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${assessment.finalTsiScore ? 'text-tsi-primary' : 'text-gray-500'}">${scoreDisplay}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${scoreDisplay !== '—' ? 'text-tsi-primary' : 'text-gray-500'}">${scoreDisplay}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="status-tag ${statusClass}">${assessment.status.toUpperCase()}</span>
+                        <span class="status-tag ${statusDetails.class}">${statusDetails.name}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
                         ${generateActionLink(assessment)}
@@ -159,7 +155,7 @@
          */
         async function fetchAssessmentData() {
             const tbody = document.getElementById('assessment-list-body');
-            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading assessment records...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading assessment records...</td></tr>`;
 
             try {
                 const response = await fetch(DMA_API_URL, {
@@ -179,11 +175,11 @@
                 if (response.ok && data.success && data.data) {
                     renderAssessmentList(data.data);
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading data: ${data.error_message || 'Unknown API Error'}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data: ${data.error_message || 'Unknown API Error'}</td></tr>`;
                 }
             } catch (error) {
                 console.error('Fetch error:', error);
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Network Error. Could not connect to the server.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Network Error. Could not connect to the server.</td></tr>`;
             }
         }
 
@@ -241,9 +237,8 @@
                 <thead class="bg-gray-50">
                 <tr>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assessment ID</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MSME / Company Name</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignment Date</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TSI Score (Final)</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Name</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TSI Rating</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                 </tr>
