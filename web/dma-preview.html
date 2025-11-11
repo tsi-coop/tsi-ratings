@@ -146,13 +146,7 @@
 
             const publishBtn = getButton('publish-btn');
             const msmeName = assessmentData.msmeName || 'this MSME';
-
-            if (assessmentData.finalTsiScore === null || assessmentData.finalTsiScore === 0.0) {
-                 showResultMessage(`Cannot publish: Final score is missing or 0.0. Please ensure the assessment is complete and scored.`, 'error');
-                 return;
-            }
-
-            if (!confirm(`Are you sure you want to PUBLISH this assessment (${assessmentData.finalTsiScore}%) and anchor the data to the blockchain? This action is irreversible.`)) {
+            if (!confirm(`Are you sure you want to PUBLISH this assessment and anchor the data to the blockchain? This action is irreversible.`)) {
                 return;
             }
 
@@ -163,7 +157,7 @@
             // --- API CALL: finalizeassessment ---
             // Send the required IDs and the final score/version as proof
             const payload = {
-                _func: 'finalizeassessment',
+                _func: 'finalize_assessment',
                 assessmentId: CURRENT_ASSESSMENT_ID,
                 msmeId: assessmentData.msmeId,
                 auditorId: assessmentData.auditorId, // Assuming auditorId is present in assessmentData
