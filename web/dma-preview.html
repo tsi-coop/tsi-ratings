@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSI Ratings | DMA Assessment Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --tsi-primary: #006A67; /* Primary Dark Teal Color */
+            --background: #f4fbf9; /* Light, clean background */
+            --border-color: #d1d5db; /* Light gray for borders */
+        }
+
+        body {
+            background-color: var(--background);
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+
+        .primary-bg { background-color: var(--tsi-primary); }
+        .primary-text { color: var(--tsi-primary); }
+
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border-color);
+        }
+
+        .sticky-footer {
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Styling for the selected answer display */
+        .selected-answer {
+            background-color: #e0f2f1; /* Light teal background */
+            border: 1px solid var(--tsi-primary);
+            color: #000000;
+            font-weight: 600;
+        }
+        .score-display {
+            font-size: 1.25rem;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'tsi-primary': 'var(--tsi-primary)',
+                    }
+                }
+            }
+        }
+
+        const AUTH_TOKEN = localStorage.getItem('token');
+        const DMA_API_URL = '/api/v1/dma';
+
+        // --- Global State ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const CURRENT_ASSESSMENT_ID = parseInt(urlParams.get('assessmentId'));
+        let assessmentData = null;
+        let dmaQuestionnaire = null;
+        let isFinalized = false;
+
+        // --- Utility Functions ---
+
+        function showResultMessage(message, type = 'default') {
+            const resultElement = document.getElementById('result-message');
+            resultElement.classList.remove('hidden', 'bg-red-100', 'text-red-600', 'bg-green-100', 'text-green-600', 'bg-blue-100', 'text-blue-600');
+            resultElement.classList.add('transition-opacity', 'duration-300');
+
+            if (type === 'error') {
+                resultElement.classList.add('bg-red-100', 'text-red-600');
+            } else if (type === 'success') {
+                resultElement.classList.add('bg-green-100', 'text-green-600');
+            } else {
+                resultElement.classList.add('bg-blue-100', 'text-blue-600');
+            }
+            resultElement.textContent = message;
+        }
+
+        function getButton(id) {
+            return document.getElementById(id);
+        }
+
+        // --- API Integration ---
+
+        /**
+         * Fetches both the questionnaire structure and the saved assessment data.
+         */
+        async function loadAssessmentPreview() {
+            showResultMessage('Loading assessment data and questionnaire structure...', 'info');
+
+            if (!CURRENT_ASSESSMENT_ID) {
+                showResultMessage('Error: Assessment ID is missing.', 'error');
+                return;
+            }
+
+            // 1. Fetch Questionnaire Template (Assumed API func)
+            const templateResponse = await fetch(DMA_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+                body: JSON.stringify({ _func: 'get_dma_questionnaire', version: 'v1' })
+            });
+            const templateData = await templateResponse.json();
+
+            if (!templateResponse.ok || !templateData.success) {
+                showResultMessage(`Failed to load questionnaire template: ${templateData.error_message || 'Error.'}`, 'error');
+                return;
+            }
+            dmaQuestionnaire = templateData.data;
+
+            // 2. Fetch Saved Assessment Details (API func: getAssessmentDetails)
+            const assessmentResponse = await fetch(DMA_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+                body: JSON.stringify({ _func: 'get_dma_assessment_details', assessmentId: CURRENT_ASSESSMENT_ID })
+            });
+            const assessmentResult = await assessmentResponse.json();
+            console.log(assessmentResult);
+
+            if (assessmentResponse.ok && assessmentResult.data) {
+                assessmentData = assessmentResult.data;
+                console.log(assessmentData);
+
+                if (assessmentData.status === 'ANCHORED') {
+                    isFinalized = true;
+                    getButton('publish-btn').disabled = true;
+                    getButton('publish-btn').textContent = 'PUBLISHED';
+                    getButton('publish-btn').classList.replace('primary-bg', 'bg-gray-500');
+                }
+
+                renderAssessmentPreview();
+                showResultMessage(`Preview loaded successfully. Score: ${assessmentData.finalTsiScore || 'N/A'}`, 'success');
+            } else {
+                showResultMessage(`Failed to load assessment details: ${assessmentResult.error_message || 'Error.'}`, 'error');
+            }
+        }
+
+        /**
+         * Initiates the blockchain anchoring process (Finalization).
+         */
+        async function publishAssessment() {
+            if (isFinalized) return;
+
+            const publishBtn = getButton('publish-btn');
+            const msmeName = assessmentData.msmeName || 'this MSME';
+
+            if (assessmentData.finalTsiScore === null || assessmentData.finalTsiScore === 0.0) {
+                 showResultMessage(`Cannot publish: Final score is missing or 0.0. Please ensure the assessment is complete and scored.`, 'error');
+                 return;
+            }
+
+            if (!confirm(`Are you sure you want to PUBLISH this assessment (${assessmentData.finalTsiScore}%) and anchor the data to the blockchain? This action is irreversible.`)) {
+                return;
+            }
+
+            publishBtn.disabled = true;
+            publishBtn.textContent = 'Anchoring...';
+            showResultMessage(`Initiating finalization for ${msmeName}. This may take a moment.`, 'info');
+
+            // --- API CALL: finalizeassessment ---
+            // Send the required IDs and the final score/version as proof
+            const payload = {
+                _func: 'finalizeassessment',
+                assessmentId: CURRENT_ASSESSMENT_ID,
+                msmeId: assessmentData.msmeId,
+                auditorId: assessmentData.auditorId, // Assuming auditorId is present in assessmentData
+                finalTsiScore: assessmentData.finalTsiScore,
+                version: dmaQuestionnaire.version
+            };
+
+            try {
+                const response = await fetch(DMA_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    isFinalized = true;
+                    showResultMessage(`SUCCESS! Assessment published and anchored. Tx ID: ${data.data.blockchainTxId}`, 'success');
+
+                    // Update UI state
+                    publishBtn.textContent = 'PUBLISHED';
+                    publishBtn.classList.replace('primary-bg', 'bg-gray-500');
+                    getButton('back-to-list-btn').textContent = 'Go to History';
+                } else {
+                    showResultMessage(`PUBLISH FAILED: ${data.error_details || data.error_message}`, 'error');
+                }
+            } catch (error) {
+                showResultMessage('Network error during publishing.', 'error');
+            } finally {
+                if (!isFinalized) {
+                    publishBtn.disabled = false;
+                    publishBtn.textContent = 'Publish & Anchor';
+                }
+            }
+        }
+
+        // --- UI Rendering ---
+
+        function renderAssessmentPreview() {
+            const container = document.getElementById('assessment-form-container');
+            const answers = assessmentData.assessmentDetailJson.results;
+            console.log(answers);
+            const auditorNotes = assessmentData.assessmentDetailJson.auditorNotes;
+            console.log(auditorNotes);
+
+            // Update Header
+            const title = dmaQuestionnaire.questionnaireTitle || 'Assessment Preview';
+            const score = parseFloat(assessmentData.finalTsiScore || 0).toFixed(2);
+
+            document.getElementById('questionnaire-title').textContent = title;
+            document.getElementById('header-info').innerHTML = `
+                MSME: <strong>${assessmentData.msmeName || 'N/A'}</strong> | Auditor: <strong>${assessmentData.auditorEmail || 'N/A'}</strong> | ID: <strong>${assessmentData.assessmentId}</strong>
+            `;
+            document.getElementById('final-score-display').textContent = `Final TSI Score: ${score}%`;
+
+            container.innerHTML = '';
+
+            // 1. Render Question Sections
+            dmaQuestionnaire.sections.forEach((section) => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'mb-10 p-6 card';
+
+                const sectionTitle = document.createElement('h2');
+                sectionTitle.className = 'text-xl font-bold primary-text mb-6 pb-2 border-b border-gray-200';
+                sectionTitle.textContent = `${section.sectionId}. ${section.sectionTitle}`;
+                sectionDiv.appendChild(sectionTitle);
+
+                section.questions.forEach((question) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'mb-6 p-4 border rounded-lg bg-gray-50';
+
+                    const questionText = document.createElement('p');
+                    questionText.className = 'text-base font-semibold text-gray-800 mb-3';
+                    questionText.textContent = `${question.questionId}. ${question.questionText}`;
+                    questionDiv.appendChild(questionText);
+
+                    // Find and display the selected answer text
+                    const selectedValue = answers[question.questionId];
+                    const selectedOption = question.options.find(opt => opt.value === selectedValue);
+                    const answerText = selectedOption ? `${selectedOption.text} (Score: ${selectedValue})` : '— Answer Missing —';
+
+                    const answerDisplay = document.createElement('div');
+                    answerDisplay.className = 'selected-answer p-3 text-sm rounded-md';
+                    answerDisplay.textContent = answerText;
+
+                    questionDiv.appendChild(answerDisplay);
+                    sectionDiv.appendChild(questionDiv);
+                });
+
+                container.appendChild(sectionDiv);
+            });
+
+            // 2. Render Qualitative Input
+            const qualitativeSection = document.createElement('div');
+            qualitativeSection.className = 'mb-10 p-6 card';
+            qualitativeSection.innerHTML = `
+                <h2 class="text-xl font-bold primary-text mb-6 pb-2 border-b border-gray-200">
+                    Auditor's Qualitative Input
+                </h2>
+                <div class="p-3 bg-gray-50 border rounded-lg whitespace-pre-wrap text-gray-700">
+                    ${auditorNotes || 'No qualitative notes were saved for this assessment.'}
+                </div>
+            `;
+            container.appendChild(qualitativeSection);
+
+            // 3. Render Anchor Proof if Finalized
+            if (assessmentData.anchorRecord) {
+                 const anchor = assessmentData.anchorRecord;
+                 const anchorSection = document.createElement('div');
+                 anchorSection.className = 'mb-10 p-6 card bg-blue-50 border-blue-400';
+                 anchorSection.innerHTML = `
+                    <h2 class="text-xl font-bold text-blue-800 mb-4">
+                        Blockchain Anchor Proof (PUBLISHED)
+                    </h2>
+                    <ul class="text-sm space-y-1 text-blue-700">
+                        <li><strong>Transaction ID:</strong> ${anchor.blockchainTxId}</li>
+                        <li><strong>TSI Hash:</strong> ${anchor.tsiHash}</li>
+                        <li><strong>Anchor Date:</strong> ${new Date(anchor.anchorDate).toLocaleString()}</li>
+                    </ul>
+                 `;
+                 container.appendChild(anchorSection);
+            }
+        }
+
+        // Run the loading function when the window loads
+        window.onload = loadAssessmentPreview;
+    </script>
+</head>
+<body class="p-8">
+
+<div class="max-w-4xl mx-auto">
+    <header class="text-center mb-8">
+        <div class="flex items-center justify-center mb-4">
+            <h1 class="text-4xl font-extrabold primary-text">TSI Ratings</h1>
+        </div>
+        <p class="text-xl font-semibold text-gray-700 mb-1" id="questionnaire-title">DMA Assessment Preview</p>
+        <p class="text-sm text-gray-500" id="header-info">Loading assessment details...</p>
+        <p class="score-display font-extrabold mt-3 primary-text" id="final-score-display">Final TSI Score: —</p>
+    </header>
+
+    <main>
+        <div id="assessment-form-container">
+            <div class="text-center p-12 card text-gray-500 font-semibold">
+                Loading assessment sections...
+            </div>
+        </div>
+    </main>
+
+    <div class="sticky-footer sticky bottom-0 p-4 mt-6 card flex justify-between items-center z-10">
+        <div id="result-message" class="text-lg font-bold hidden px-4 py-2 rounded-lg transition-opacity duration-300">
+        </div>
+
+        <div class="flex space-x-4 ml-auto">
+            <a href="auditor-assessment-list.html" id="back-to-list-btn"
+               class="px-6 py-3 border border-gray-400 text-gray-700 bg-white rounded-lg font-semibold hover:bg-gray-100 transition duration-200 flex items-center">
+                ← Back to Edit
+            </a>
+
+            <button type="button" id="publish-btn" onclick="publishAssessment()"
+                    class="px-6 py-3 primary-bg text-white rounded-lg font-semibold hover:bg-opacity-90 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                Publish & Anchor
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

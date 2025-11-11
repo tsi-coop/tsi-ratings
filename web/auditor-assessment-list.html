@@ -87,7 +87,7 @@
             if (upperStatus === 'PENDING') {
                 return { name: 'DRAFT', class: 'status-draft', actions: [
                     { type: 'edit', text: 'Edit Draft', link: (id) => `dma-assessment.html?assessmentId=${id}`, style: 'primary-text' },
-                    { type: 'publish', text: 'Publish', link: (id) => `assessment-preview.html?assessmentId=${id}`, style: 'text-green-600' }
+                    { type: 'publish', text: 'Publish', link: (id) => `dma-preview.html?assessmentId=${id}`, style: 'text-green-600' }
                 ] };
             }
             if (upperStatus === 'ANCHORED') {
