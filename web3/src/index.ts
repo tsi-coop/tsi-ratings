@@ -8,6 +8,7 @@ import { AuthRequest, createAuthMiddleware } from '@bsv/auth-express-middleware'
 import * as crypto from 'crypto';
 import { WalletClient, PushDrop, Utils, Transaction, LockingScript, type WalletOutput, WalletProtocol} from '@bsv/sdk';
 import { Chain } from '@bsv/wallet-toolbox/out/src/sdk/types.js';
+import { PubKeyHex, VerifiableCertificate } from '@bsv/sdk'
 
 // Global crypto polyfill needed for some environments
 (global.self as any) = { crypto };
@@ -19,8 +20,12 @@ const {
   HTTP_PORT,
   BSV_NETWORK,
   AUTH_USER,
-  AUTH_SECRET
+  AUTH_SECRET,
+  CERTIFICATE_TYPE_ID = 'AGfk/WrT1eBDXpz3mcw386Zww2HmqcIn3uY6x4Af1eo=',
+  CERTIFIER_IDENTITY_KEY = '4g+2KE5u6IpG9YUszhiB/ttbmfj29bi5vxkMdOAfXCE='
 } = process.env;
+
+const CERTIFICATES_RECEIVED: Record<PubKeyHex, VerifiableCertificate[]> = {}
 
 // Function to validate critical environment variables
 function validateEnvironment() {
@@ -63,7 +68,6 @@ app.use(bodyParser.json({ limit: '64mb' }));
 // Middleware to handle CORS
 app.use((req: Request, res: Response, next: NextFunction) => {
   console.log(req.method);
-  allowUnauthenticated: true
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Access-Control-Allow-Methods', '*');
@@ -130,10 +134,31 @@ async function init() {
   // Setup Authentication Middleware (Ensures only Certified Auditors can use this endpoint)
   app.use(createAuthMiddleware({
     wallet,
-    allowUnauthenticated: true, // Require a wallet client to interact
+    allowUnauthenticated: false, // Require a wallet client to interact
     logger: console,
-    logLevel: 'debug'
-  }));
+    logLevel: 'debug',
+    certificatesToRequest: {
+          certifiers: [CERTIFIER_IDENTITY_KEY],
+          types: {
+            [CERTIFICATE_TYPE_ID]: ['cool']
+          }
+        },
+    // Save certificates correctly when received.
+    onCertificatesReceived: (
+      senderPublicKey: string,
+      certs: VerifiableCertificate[],
+      req: AuthRequest,
+      res: Response,
+      next: NextFunction
+    ) => {
+      console.log('CERTS RECEIVED', certs)
+      if (!CERTIFICATES_RECEIVED[senderPublicKey]) {
+        CERTIFICATES_RECEIVED[senderPublicKey] = []
+      }
+      CERTIFICATES_RECEIVED[senderPublicKey].push(...certs)
+      // next()
+    }
+  }))
 
   // ---------------------------------------------------------------------------
   // /anchorTSI Endpoint - Receives final score and anchors hash to Blockchain
@@ -142,65 +167,70 @@ async function init() {
   app.post('/anchor-tsi-rating', async (req: AuthRequest, res: Response) => {
     console.log('here1');
     const identityKey = req.auth?.identityKey || '';
+    console.log(identityKey);
+    const certs = CERTIFICATES_RECEIVED[identityKey];
+    console.log('Certificates from requester:', certs)
+    debugger
+    if (certs && certs.some(cert => cert.type === CERTIFICATE_TYPE_ID)) {
+        // --- Input Validation ---
+        const tsiData: TsiData = req.body.tsiData;
+        const { msmeId, auditorId, finalScore, assessmentDate, version } = tsiData;
 
-    // --- Input Validation ---
-    const tsiData: TsiData = req.body.tsiData;
-    const { msmeId, auditorId, finalScore, assessmentDate, version } = tsiData;
-
-    if (!msmeId || !auditorId || typeof finalScore !== 'number' || !assessmentDate || !version) {
-      return res.status(400).json({
-        status: 'error',
-        description: 'Invalid input data: Missing required fields for TSI anchoring.'
-      });
-    }
-
-    // --- Hashing and Transaction ---
-
-    try {
-        // 1. Create the immutable hash
-        const tsiHash = createTsiHash(tsiData);
-
-        // 2. Define the PushDrop data protocol (Array of Buffers or Strings)
-        // Protocol: [TSI_PROTOCOL_ID, SHA256_HASH]
-        const TSI_RATING_PROTO_ADDR = '1ToDoDtKreEzbHYKFjmoBuduFmSXXUGZG'
-        const PROTOCOL_ID: WalletProtocol = [0, 'TSI RATING'];
-        const KEY_ID = '1';
-
-       const hashedRating = (await wallet.encrypt({
-       plaintext: Utils.toArray(tsiHash, 'utf8'),
-       protocolID: PROTOCOL_ID,
-       keyID: KEY_ID
-      })).ciphertext
-       console.log(hashedRating);
-
-        const pushdrop = new PushDrop(wallet)
-        const bitcoinOutputScript = await pushdrop.lock(
-            [ // The "fields" are the data payload to attach to the token.
-              Utils.toArray(TSI_RATING_PROTO_ADDR, 'utf8'),
-              hashedRating
-            ],
-            PROTOCOL_ID,
-            KEY_ID,
-            'self'
-        )
-
-        // Create a token which represents an event ticket
-        const response = await wallet.createAction({
-          description: `TSI Rating Anchor for business:${msmeId} (PushDrop)`,
-          outputs: [{
-            satoshis: 1,
-            lockingScript: bitcoinOutputScript.toHex(),
-            basket: 'TSI_RATING_DMA',
-            outputDescription: 'TSI DMA Rating'
-          }]
-        })
-    } catch (error) {
-        console.error('Blockchain anchoring failed:', error);
-        res.status(500).json({
+        if (!msmeId || !auditorId || typeof finalScore !== 'number' || !assessmentDate || !version) {
+          return res.status(400).json({
             status: 'error',
-            description: 'Failed to create blockchain anchor transaction.',
-            details: (error as Error).message
-        });
+            description: 'Invalid input data: Missing required fields for TSI anchoring.'
+          });
+        }
+
+        // --- Hashing and Transaction ---
+
+        try {
+            // 1. Create the immutable hash
+            const tsiHash = createTsiHash(tsiData);
+
+            // 2. Define the PushDrop data protocol (Array of Buffers or Strings)
+            // Protocol: [TSI_PROTOCOL_ID, SHA256_HASH]
+            const TSI_RATING_PROTO_ADDR = '1ToDoDtKreEzbHYKFjmoBuduFmSXXUGZG'
+            const PROTOCOL_ID: WalletProtocol = [0, 'TSI RATING'];
+            const KEY_ID = '1';
+
+           const hashedRating = (await wallet.encrypt({
+           plaintext: Utils.toArray(tsiHash, 'utf8'),
+           protocolID: PROTOCOL_ID,
+           keyID: KEY_ID
+          })).ciphertext
+           console.log(hashedRating);
+
+            const pushdrop = new PushDrop(wallet)
+            const bitcoinOutputScript = await pushdrop.lock(
+                [ // The "fields" are the data payload to attach to the token.
+                  Utils.toArray(TSI_RATING_PROTO_ADDR, 'utf8'),
+                  hashedRating
+                ],
+                PROTOCOL_ID,
+                KEY_ID,
+                'self'
+            )
+
+            // Create a token which represents an event ticket
+            const response = await wallet.createAction({
+              description: `TSI Rating Anchor for business:${msmeId} (PushDrop)`,
+              outputs: [{
+                satoshis: 1,
+                lockingScript: bitcoinOutputScript.toHex(),
+                basket: 'TSI_RATING_DMA',
+                outputDescription: 'TSI DMA Rating'
+              }]
+            })
+        } catch (error) {
+            console.error('Blockchain anchoring failed:', error);
+            res.status(500).json({
+                status: 'error',
+                description: 'Failed to create blockchain anchor transaction.',
+                details: (error as Error).message
+            });
+        }
     }
   });
 
