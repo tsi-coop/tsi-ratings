@@ -67,21 +67,16 @@ app.use(bodyParser.json({ limit: '64mb' }));
 
 // Middleware to handle CORS
 app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(req.method);
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Access-Control-Allow-Methods', '*');
   res.header('Access-Control-Expose-Headers', '*');
   res.header('Access-Control-Allow-Private-Network', 'true');
-  res.header('X-BSV-Payment', '1');
   if (req.method === 'OPTIONS') {
-    console.log('options');
     res.sendStatus(200);
   } else {
-    console.log('next');
     next();
   }
-  console.log('here-c');
 });
 
 
@@ -181,7 +176,7 @@ async function init() {
     const certs = CERTIFICATES_RECEIVED[identityKey];
     console.log('Certificates from requester:', certs)
     debugger
-    if (certs && certs.some(cert => cert.type === CERTIFICATE_TYPE_ID)) {
+    //if (certs && certs.some(cert => cert.type === CERTIFICATE_TYPE_ID)) {
         // --- Input Validation ---
         const tsiData: TsiData = req.body.tsiData;
         const { msmeId, auditorId, finalScore, assessmentDate, version } = tsiData;
@@ -214,8 +209,7 @@ async function init() {
 
             const pushdrop = new PushDrop(wallet)
             const bitcoinOutputScript = await pushdrop.lock(
-                [ // The "fields" are the data payload to attach to the token.
-                  Utils.toArray(TSI_RATING_PROTO_ADDR, 'utf8'),
+                [
                   hashedRating
                 ],
                 PROTOCOL_ID,
@@ -241,95 +235,15 @@ async function init() {
                 details: (error as Error).message
             });
         }
-    }
+    //}
   });
-
-  app.post('/api/v1/verification/anchor', async (req: AuthRequest, res: Response) => {
-      // --- Input Validation ---
-      const tsiData: TsiData = req.body.tsiData;
-      const txid: string = req.body.txid;
-
-      if (!txid || typeof txid !== 'string' || txid.length !== 64) {
-        return res.status(400).json({
-          status: 'error',
-          description: 'Invalid input data: Missing or malformed transaction ID (txid).'
-        });
-      }
-
-      const { msmeId, auditorId, finalScore, assessmentDate, version } = tsiData;
-
-      if (!msmeId || !auditorId || typeof finalScore !== 'number' || !assessmentDate || !version) {
-        return res.status(400).json({
-          status: 'error',
-          description: 'Invalid input data: Missing required fields for TSI data verification.'
-        });
-      }
-
-      try {
-        // 1. Hashing the Presented Data
-        const presentedHash = createTsiHash(tsiData);
-        console.log('Presented Hash:', presentedHash);
-
-        // 2. Simulate Retrieval and Decryption of the Anchor Hash
-        // NOTE: In a real application, this step involves complex logic:
-        // a) Fetching the transaction (txid) from a Bitcoin service (e.g., WhatsOnChain).
-        // b) Parsing the PushDrop output script to extract the encrypted data.
-        // c) Using wallet.decrypt() with the correct protocolID and keyID.
-
-        // --- MOCK IMPLEMENTATION START ---
-        let originalAnchoredHash: string;
-
-        console.warn('NOTE: Using a mock for blockchain retrieval and decryption.');
-
-        if (txid === '0000000000000000000000000000000000000000000000000000000000000001') {
-            // This is a dummy hash representing what would be retrieved and decrypted
-            // if the retrieval was successful.
-            originalAnchoredHash = '990f77b7f1e56b3e95454687d6050529d84f4755104fa2c7df7c6e081c7268d0';
-        } else {
-            // Mocking a transaction not found or invalid
-            console.error('Mock retrieval failed for TXID:', txid);
-            return res.status(404).json({
-                status: 'error',
-                description: 'Anchor transaction could not be found or retrieved.',
-                details: `Mock retrieval failed for txid: ${txid}`
-            });
-        }
-        // --- MOCK IMPLEMENTATION END ---
-
-        console.log('Original Anchored Hash (Simulated):', originalAnchoredHash);
-
-
-        // 3. Comparing Hashes
-        const match = presentedHash === originalAnchoredHash;
-        const resultStatus = match ? 'MATCH' : 'MISMATCH';
-
-        // 4. Send Response
-        res.status(200).json({
-          status: 'success',
-          result: resultStatus,
-          msmeId: msmeId,
-          presentedHash: presentedHash,
-          anchoredHash: originalAnchoredHash,
-          txid: txid,
-          description: match ? 'The presented data hash matches the immutable blockchain anchor.' : 'The presented data hash DOES NOT match the immutable blockchain anchor.'
-        });
-
-      } catch (error) {
-        console.error('TSI Verification failed:', error);
-        res.status(500).json({
-          status: 'error',
-          description: 'Failed to complete blockchain verification process.',
-          details: (error as Error).message
-        });
-      }
-    });
 
   // Start the server.
-  app.listen(HTTP_PORT_STR, () => {
-    console.log('TSI Blockchain Anchor Service listening on port', HTTP_PORT);
-  });
-}
+  app.listen(HTTP_PORT, () => {
+      console.log('TSI Rating Blockchain Anchor listening on port', HTTP_PORT)
+  })
 
+}
 init().catch(err => {
   console.error('Failed to start server:', err);
 });
