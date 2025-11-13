@@ -188,7 +188,7 @@ async function init() {
         const response = await wallet.createAction({
           description: `TSI Rating Anchor for business:${msmeId} (PushDrop)`,
           outputs: [{
-            satoshis: 176,
+            satoshis: 1,
             lockingScript: bitcoinOutputScript.toHex(),
             basket: 'TSI_RATING_DMA',
             outputDescription: 'TSI DMA Rating'
