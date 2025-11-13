@@ -56,11 +56,11 @@ const app = express();
 const basicAuth = require('express-basic-auth');
 
 // Configure the basic authentication middleware
-app.use(basicAuth({
+/*app.use(basicAuth({
     users: { 'admin':'supersecret' },
     challenge: true, // This makes the browser prompt for credentials
     unauthorizedResponse: 'Unauthorized access. Please provide valid credentials.'
-}));
+}));*/
 
 
 app.use(bodyParser.json({ limit: '64mb' }));
@@ -73,7 +73,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.header('Access-Control-Allow-Methods', '*');
   res.header('Access-Control-Expose-Headers', '*');
   res.header('Access-Control-Allow-Private-Network', 'true');
-  res.header('X-BSV-Payment', '1000');
+  res.header('X-BSV-Payment', '1');
   if (req.method === 'OPTIONS') {
     console.log('options');
     res.sendStatus(200);
@@ -160,12 +160,22 @@ async function init() {
     }
   }))
 
+    app.use(createPaymentMiddleware({
+        wallet,
+        calculateRequestPrice: async (req) => {
+          return 1 // 1 sat flat rate fee
+        }
+      }))
+
   // ---------------------------------------------------------------------------
   // /anchorTSI Endpoint - Receives final score and anchors hash to Blockchain
   // ---------------------------------------------------------------------------
 
   app.post('/anchor-tsi-rating', async (req: AuthRequest, res: Response) => {
     console.log('here1');
+    // Setup the payment middleware.
+
+
     const identityKey = req.auth?.identityKey || '';
     console.log(identityKey);
     const certs = CERTIFICATES_RECEIVED[identityKey];
