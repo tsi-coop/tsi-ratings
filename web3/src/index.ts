@@ -196,7 +196,6 @@ async function init() {
 
             // 2. Define the PushDrop data protocol (Array of Buffers or Strings)
             // Protocol: [TSI_PROTOCOL_ID, SHA256_HASH]
-            const TSI_RATING_PROTO_ADDR = '1ToDoDtKreEzbHYKFjmoBuduFmSXXUGZG'
             const PROTOCOL_ID: WalletProtocol = [0, 'TSI RATING'];
             const KEY_ID = '1';
 
