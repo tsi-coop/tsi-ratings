@@ -1,0 +1,1 @@
+curl -X POST -H "Content-Type: application/json" -H"Authorization: Basic YWRtaW46c3VwZXJzZWNyZXQ=" -d @C:\work\tsi-ratings\tests\anchor.json http://localhost:8085/anchor-tsi-rating

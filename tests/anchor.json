@@ -1,0 +1,10 @@
+{
+  "tsiData": {
+    "msmeId": "1",
+    "auditorId": "2",
+    "finalScore": 91.5,
+    "assessmentDate": "2025-11-04T10:30:00Z",
+    "version": "v1",
+    "type":"DMA"
+  }
+}
