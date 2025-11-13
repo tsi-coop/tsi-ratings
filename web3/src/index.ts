@@ -239,8 +239,6 @@ async function init() {
         // --- MOCK IMPLEMENTATION START ---
         let originalAnchoredHash: string;
 
-        // For demonstration, we'll assume a successful retrieval yields a known hash.
-        // In a production environment, this would be the actual decrypted hash from the blockchain.
         console.warn('NOTE: Using a mock for blockchain retrieval and decryption.');
 
         if (txid === '0000000000000000000000000000000000000000000000000000000000000001') {
