@@ -55,14 +55,6 @@ const AUTH_SECRET_STR: string = AUTH_SECRET as string;
 const app = express();
 const basicAuth = require('express-basic-auth');
 
-// Configure the basic authentication middleware
-/*app.use(basicAuth({
-    users: { 'admin':'supersecret' },
-    challenge: true, // This makes the browser prompt for credentials
-    unauthorizedResponse: 'Unauthorized access. Please provide valid credentials.'
-}));*/
-
-
 app.use(bodyParser.json({ limit: '64mb' }));
 
 // Middleware to handle CORS
@@ -158,7 +150,7 @@ async function init() {
     app.use(createPaymentMiddleware({
         wallet,
         calculateRequestPrice: async (req) => {
-          return 171 // 1 sat flat rate fee
+          return 1 // 1 sat flat rate fee
         }
       }))
 
