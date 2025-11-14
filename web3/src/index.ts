@@ -158,7 +158,7 @@ async function init() {
     app.use(createPaymentMiddleware({
         wallet,
         calculateRequestPrice: async (req) => {
-          return 1 // 1 sat flat rate fee
+          return 171 // 1 sat flat rate fee
         }
       }))
 
