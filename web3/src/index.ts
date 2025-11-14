@@ -192,7 +192,7 @@ async function init() {
             const KEY_ID = '1';
 
            const hashedRating = (await wallet.encrypt({
-           plaintext: Utils.toArray(tsiHash, 'utf8'),
+           plaintext: Utils.toArray("dummy", 'utf8'),
            protocolID: PROTOCOL_ID,
            keyID: KEY_ID
           })).ciphertext

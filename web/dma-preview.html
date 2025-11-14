@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TSI Ratings | DMA Assessment Preview</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/bundle.js"></script>
+    <script type="module" src="js/client.js"></script>
     <style>
         :root {
             --tsi-primary: #006A67; /* Primary Dark Teal Color */
@@ -140,6 +142,67 @@
 
         /**
          * Initiates the blockchain anchoring process (Finalization).
+         * This function now uses the client-side BSV Wallet SDK for demonstration.
+         */
+        async function anchorTSI() {
+            const btn = getButton('publish-btn');
+            btn.disabled = true;
+            btn.textContent = 'Anchoring...';
+            showResultMessage('Initiating client-side token anchor...', 'info');
+
+            // Define the JSON payload to be sent (Using hardcoded demo data)
+            const tsiPayload = {
+              "tsiData": {
+                "msmeId": "1",
+                "auditorId": "2",
+                "finalScore": 91.5,
+                "assessmentDate": "2025-11-04T10:30:00Z",
+                "version": "v1",
+                "type":"DMA"
+              }
+            };
+
+            // NOTE: The endpoint is /anchorTSI, which requires basic auth in index.ts
+            const ANCHOR_URL = 'http://localhost:8085/anchor-tsi-rating';
+
+            try {
+                // Create the wallet client and AuthFetch instance using window.bsv
+                const { AuthFetch, WalletClient } = window.bsv;
+                const wallet = new WalletClient('json-api', 'localhost');
+                const client = new AuthFetch(wallet);
+
+                // Fetch the anchor endpoint using AuthFetch.
+                const response = await client.fetch(ANCHOR_URL, {
+                  method: 'POST',
+                  body: JSON.stringify(tsiPayload),
+                  headers: {
+                    'Content-Type': 'application/json'
+                  }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status !== 'error') {
+                    showResultMessage(`SUCCESS! Hash anchored. Tx ID: ${data.data.txid}`, 'success');
+                    document.getElementById('anchor-data').innerHTML = JSON.stringify(data, null, 2);
+                    btn.textContent = 'ANCHORED';
+                    btn.classList.replace('primary-bg', 'bg-gray-500');
+                } else {
+                    showResultMessage(`ANCHOR FAILED: ${data.description || data.error_message}`, 'error');
+                }
+            } catch (error) {
+                showResultMessage(`Client or Network Error: ${error.message}`, 'error');
+                console.error('[ERROR] Failed to anchor data:', error);
+            } finally {
+                btn.disabled = false;
+                if (btn.textContent === 'Anchoring...') {
+                    btn.textContent = 'Publish & Anchor';
+                }
+            }
+        }
+
+        /**
+         * Initiates the blockchain anchoring process (Finalization).
          */
         async function publishAssessment() {
             if (isFinalized) return;
@@ -154,6 +217,10 @@
             publishBtn.textContent = 'Anchoring...';
             showResultMessage(`Initiating finalization for ${msmeName}. This may take a moment.`, 'info');
 
+            // Execute the new anchoring function
+            await anchorTSI();
+
+            /*
             // --- API CALL: finalizeassessment ---
             // Send the required IDs and the final score/version as proof
             const payload = {
@@ -192,7 +259,7 @@
                     publishBtn.disabled = false;
                     publishBtn.textContent = 'Publish & Anchor';
                 }
-            }
+            } */
         }
 
         // --- UI Rendering ---
@@ -304,6 +371,11 @@
             <div class="text-center p-12 card text-gray-500 font-semibold">
                 Loading assessment sections...
             </div>
+        </div>
+
+        <div class="mt-8 p-6 card">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Raw Anchor Result</h2>
+            <pre id="anchor-data" class="text-sm overflow-auto"></pre>
         </div>
     </main>
 
