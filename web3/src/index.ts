@@ -79,39 +79,6 @@ interface TsiData {
 }
 
 /**
- * Generates a SHA-256 hash of the complete TSI data structure.
- * This hash is the immutable fingerprint anchored to the blockchain.
- * @param data The structured TSI data.
- * @returns The SHA-256 hash string.
- */
-function createTsiHash(data: TsiData): number[][] {
-  // Use a stable JSON stringification to ensure the hash is consistent
-  const dataString = JSON.stringify(data);
-
-  // 1. Calculate the hash and return it as a Buffer
-  const hashBuffer: Buffer = crypto.createHash('sha256')
-    .update(dataString)
-    .digest();
-
-  // 2. Convert the Buffer to a flat array of numbers (bytes)
-  const flatHashArray: number[] = Array.from(hashBuffer);
-
-  // 3. Reshape the flat array into a number[][].
-  // We'll split the 32-byte array into 4 chunks of 8 bytes each.
-  const reshapedArray: number[][] = [];
-  const chunkSize = 8;
-
-  for (let i = 0; i < flatHashArray.length; i += chunkSize) {
-    const chunk = flatHashArray.slice(i, i + chunkSize);
-    reshapedArray.push(chunk);
-  }
-
-  // The result will be a 4x8 array (e.g., [[byte, byte, ...], [byte, byte, ...], ...])
-  return reshapedArray;
-}
-
-
-/**
  * Converts two integer constants (msmeId and auditorId) into an array of numbers.
  * @param msmeId The ID of the MSME (integer).
  * @param auditorId The ID of the auditor (integer).
@@ -156,7 +123,7 @@ async function init() {
   app.use(createPaymentMiddleware({
     wallet,
     calculateRequestPrice: async (req) => {
-      return 1 // 1 sat flat rate fee
+      return 160;
     }
   }))
   console.log('payment middleware initiated');
@@ -192,6 +159,7 @@ async function init() {
             // 1. Create the immutable hash
             //const tsiHash = createTsiHash(tsiData);
             const twoDimensionalIdArray: number[][] = [convertIdsToArray(123, 456)];
+            console.log(twoDimensionalIdArray);
 
             // 2. Define the PushDrop data protocol (Array of Buffers or Strings)
             // Protocol: [TSI_PROTOCOL_ID, SHA256_HASH]
@@ -212,6 +180,7 @@ async function init() {
                   KEY_ID,
                   'self'
             )
+            console.log(bitcoinOutputScript);
 
             // Create a token which represents an event ticket
             const response = await wallet.createAction({
@@ -223,6 +192,7 @@ async function init() {
                 outputDescription: 'TSI DMA Rating'
               }]
             })
+             console.log(response);
         } catch (error) {
             console.error('Blockchain anchoring failed:', error);
             res.status(500).json({
