@@ -64,10 +64,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-
-// Serve static files (if needed)
-//app.use(express.static('public'));
-
 // --- Core TSI Anchoring Logic ---
 
 // The structure for the data to be anchored
@@ -90,32 +86,15 @@ function convertIdsToArray(msmeId: number, auditorId: number): number[] {
   return [msmeId, auditorId];
 }
 
-/**
- * Creates an OpReturn script
- *
- * @param {string | string[] | number[]} data The data or array of data to push after OP_RETURN.
- * @param {('hex' | 'utf8' | 'base64')} enc The data encoding type, defaults to utf8.
- * @returns {LockingScript} - An OpReturn locking script.
- */
-function lock (data: string | string[] | number[], enc?: 'hex' | 'utf8' | 'base64'): LockingScript {
-const script: Array<{ op: number, data?: number[] }> = [
-  { op: OP.OP_FALSE },
-  { op: OP.OP_RETURN }
-]
+function createTsiHash(data: TsiData): string {
+  // CRITICAL STEP: Use a stable JSON stringification. JSON.stringify()
+  // maintains key order, ensuring the hash remains consistent across systems.
+  const dataString = JSON.stringify(data);
+  console.log("Data String...");
+  console.log(dataString);
 
-if (typeof data === 'string') {
-  data = [data]
-}
-
-if ((data.length > 0) && typeof data[0] === 'number') {
-  script.push({ op: data.length, data: data as number[] })
-} else {
-  for (const entry of data.filter(Boolean)) {
-    const arr = Utils.toArray(entry, enc)
-    script.push({ op: arr.length, data: arr })
-  }
-}
-return new LockingScript(script)
+  // Apply SHA-256 hashing algorithm
+  return crypto.createHash('sha256').update(dataString).digest('hex');
 }
 
 // -----------------------------------------------------------------------------
@@ -185,27 +164,21 @@ async function init() {
         try {
             // Then, just use your template with the SDK!
             const instance = new OpReturn()
-            /*const tx = new Transaction()
-            tx.addOutput({
-              lockingScript: instance.lock('1234'),
-              satoshis: 1
-            }) */
-            console.log('before');
             const response = await wallet.createAction({
               description: `TSI Rating Anchor for business:${msmeId} (OpReturn)`,
               outputs: [{
                 satoshis: 1,
-                lockingScript: instance.lock('1234').toHex(),
+                lockingScript: instance.lock(createTsiHash(tsiData)).toHex(),
                 basket: 'TSI_RATING_DMA',
                 outputDescription: 'TSI DMA Rating'
               }]
             })
-            console.log('Printing response');
-            console.log(response);
+            console.log('txid');
+            console.log(response.txid);
             res.status(200).json({
                             status: 'OK',
                             description: 'TSI Rating Token Anchored.',
-                            details: response
+                            details: response.txid
                         });
         } catch (error) {
             console.error('Blockchain anchoring failed:', error);

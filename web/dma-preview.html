@@ -140,6 +140,34 @@
             }
         }
 
+        async function confirmAnchorInDB(txId, tsiHash) {
+            const payload = {
+                _func: 'updateAnchorRecord', // Assuming you create this function in DMAService.java
+                assessmentId: CURRENT_ASSESSMENT_ID,
+                blockchainTxId: txId,
+                tsiHash: tsiHash,
+                type: 'DMA' // Type of assessment being anchored
+            };
+
+            try {
+                const response = await fetch(DMA_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    return { success: true, message: 'Database updated successfully.' };
+                } else {
+                    return { success: false, message: `DB Update Failed: ${data.error_message || 'Unknown error.'}` };
+                }
+            } catch (error) {
+                return { success: false, message: `Network error during DB confirmation: ${error.message}` };
+            }
+        }
+
         /**
          * Initiates the blockchain anchoring process (Finalization).
          * This function now uses the client-side BSV Wallet SDK for demonstration.
@@ -181,20 +209,21 @@
                 });
 
                 const data = await response.json();
-
-                if (response.ok && data.status !== 'error') {
-                    showResultMessage(`SUCCESS! Hash anchored. Tx ID: ${data.data.txid}`, 'success');
+                console.log(data);
+                if (response.ok) {
+                    showResultMessage(`SUCCESS! Hash anchored. Tx ID: ${data.details}`, 'success');
                     document.getElementById('anchor-data').innerHTML = JSON.stringify(data, null, 2);
                     btn.textContent = 'ANCHORED';
+                    btn.disabled = true;
                     btn.classList.replace('primary-bg', 'bg-gray-500');
                 } else {
                     showResultMessage(`ANCHOR FAILED: ${data.description || data.error_message}`, 'error');
                 }
             } catch (error) {
+                btn.disabled = false;
                 showResultMessage(`Client or Network Error: ${error.message}`, 'error');
                 console.error('[ERROR] Failed to anchor data:', error);
             } finally {
-                btn.disabled = false;
                 if (btn.textContent === 'Anchoring...') {
                     btn.textContent = 'Publish & Anchor';
                 }
