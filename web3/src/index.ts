@@ -6,9 +6,10 @@ import { Setup } from '@bsv/wallet-toolbox';
 import { createPaymentMiddleware } from '@bsv/payment-express-middleware';
 import { AuthRequest, createAuthMiddleware } from '@bsv/auth-express-middleware';
 import * as crypto from 'crypto';
-import { PrivateKey, WalletClient, PushDrop, Utils, Transaction, LockingScript, type WalletOutput, WalletProtocol} from '@bsv/sdk';
+import { PrivateKey, WalletClient, PushDrop, OP, Utils, Transaction, LockingScript, type WalletOutput, WalletProtocol} from '@bsv/sdk';
 import { Chain } from '@bsv/wallet-toolbox/out/src/sdk/types.js';
-import { PubKeyHex, VerifiableCertificate } from '@bsv/sdk'
+import { PubKeyHex, VerifiableCertificate } from '@bsv/sdk';
+import { OpReturn } from '@bsv/templates';
 
 // Global crypto polyfill needed for some environments
 (global.self as any) = { crypto };
@@ -89,6 +90,34 @@ function convertIdsToArray(msmeId: number, auditorId: number): number[] {
   return [msmeId, auditorId];
 }
 
+/**
+ * Creates an OpReturn script
+ *
+ * @param {string | string[] | number[]} data The data or array of data to push after OP_RETURN.
+ * @param {('hex' | 'utf8' | 'base64')} enc The data encoding type, defaults to utf8.
+ * @returns {LockingScript} - An OpReturn locking script.
+ */
+function lock (data: string | string[] | number[], enc?: 'hex' | 'utf8' | 'base64'): LockingScript {
+const script: Array<{ op: number, data?: number[] }> = [
+  { op: OP.OP_FALSE },
+  { op: OP.OP_RETURN }
+]
+
+if (typeof data === 'string') {
+  data = [data]
+}
+
+if ((data.length > 0) && typeof data[0] === 'number') {
+  script.push({ op: data.length, data: data as number[] })
+} else {
+  for (const entry of data.filter(Boolean)) {
+    const arr = Utils.toArray(entry, enc)
+    script.push({ op: arr.length, data: arr })
+  }
+}
+return new LockingScript(script)
+}
+
 // -----------------------------------------------------------------------------
 // Wallet and Middleware Setup inside async init function
 // -----------------------------------------------------------------------------
@@ -123,7 +152,7 @@ async function init() {
   app.use(createPaymentMiddleware({
     wallet,
     calculateRequestPrice: async (req) => {
-      return 160;
+      return 255;
     }
   }))
   console.log('payment middleware initiated');
@@ -153,9 +182,44 @@ async function init() {
           });
         }
 
-        // --- Hashing and Transaction ---
-
         try {
+            // Then, just use your template with the SDK!
+            const instance = new OpReturn()
+            /*const tx = new Transaction()
+            tx.addOutput({
+              lockingScript: instance.lock('1234'),
+              satoshis: 1
+            }) */
+            console.log('before');
+            const response = await wallet.createAction({
+              description: `TSI Rating Anchor for business:${msmeId} (OpReturn)`,
+              outputs: [{
+                satoshis: 1,
+                lockingScript: instance.lock('1234').toHex(),
+                basket: 'TSI_RATING_DMA',
+                outputDescription: 'TSI DMA Rating'
+              }]
+            })
+            console.log('Printing response');
+            console.log(response);
+            res.status(200).json({
+                            status: 'OK',
+                            description: 'TSI Rating Token Anchored.',
+                            details: response
+                        });
+        } catch (error) {
+            console.error('Blockchain anchoring failed:', error);
+            res.status(500).json({
+                status: 'error',
+                description: 'Failed to create blockchain anchor transaction.',
+                details: (error as Error).message
+            });
+        }
+
+        // --- Hashing and Transaction ---
+        /*
+        try {
+
             // 1. Create the immutable hash
             //const tsiHash = createTsiHash(tsiData);
             const twoDimensionalIdArray: number[][] = [convertIdsToArray(123, 456)];
@@ -165,13 +229,6 @@ async function init() {
             // Protocol: [TSI_PROTOCOL_ID, SHA256_HASH]
             const PROTOCOL_ID: WalletProtocol = [0, 'TSI RATING'];
             const KEY_ID = '1';
-
-          /* const hashedRating = (await wallet.encrypt({
-           plaintext: Utils.toArray(tsiHash, 'utf8'),
-           protocolID: PROTOCOL_ID,
-           keyID: KEY_ID
-          })).ciphertext */
-          // console.log(hashedRating);
 
             const pushdrop = new PushDrop(wallet)
             const bitcoinOutputScript = await pushdrop.lock(
@@ -201,9 +258,7 @@ async function init() {
                 details: (error as Error).message
             });
         }
-   /* }else{
-      console.log("Cert not received");
-    } */
+        */
   });
 
   // Start the server.
