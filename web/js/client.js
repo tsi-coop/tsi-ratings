@@ -13,7 +13,7 @@ const tsiPayload = {
   }
 };
 
-document.getElementById('publish-btn').addEventListener('click', async () => {
+document.getElementById('tokenize-btn').addEventListener('click', async () => {
   try {
     // Create the wallet client and AuthFetch instance.
     const wallet = new WalletClient('json-api', 'localhost')

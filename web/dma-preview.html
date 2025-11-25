@@ -6,7 +6,6 @@
     <title>TSI Ratings | DMA Assessment Preview</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/bundle.js"></script>
-    <script type="module" src="js/client.js"></script>
     <style>
         :root {
             --tsi-primary: #006A67; /* Primary Dark Teal Color */
@@ -58,12 +57,15 @@
         const AUTH_TOKEN = localStorage.getItem('token');
         const DMA_API_URL = '/api/v1/dma';
 
+
         // --- Global State ---
         const urlParams = new URLSearchParams(window.location.search);
         const CURRENT_ASSESSMENT_ID = parseInt(urlParams.get('assessmentId'));
         let assessmentData = null;
         let dmaQuestionnaire = null;
         let isFinalized = false;
+        let TSI_HASH = null;
+        let BLOCKCHAIN_TXID = null;
 
         // --- Utility Functions ---
 
@@ -128,9 +130,16 @@
 
                 if (assessmentData.status === 'ANCHORED') {
                     isFinalized = true;
-                    getButton('publish-btn').disabled = true;
-                    getButton('publish-btn').textContent = 'PUBLISHED';
-                    getButton('publish-btn').classList.replace('primary-bg', 'bg-gray-500');
+                    getButton('tokenize-btn').disabled = true;
+                    getButton('tokenize-btn').textContent = 'TOKENIZED';
+                    getButton('tokenize-btn').classList.replace('primary-bg', 'bg-gray-500');
+
+                    getButton('finalize-btn').disabled = false;
+                    getButton('finalize-btn').textContent = 'PUBLISH';
+                    getButton('finalize-btn').classList.replace('bg-gray-500','primary-bg');
+                } else{
+                    getButton('tokenize-btn').disabled = false;
+                     getButton('finalize-btn').disabled = true;
                 }
 
                 renderAssessmentPreview();
@@ -140,52 +149,26 @@
             }
         }
 
-        async function confirmAnchorInDB(txId, tsiHash) {
-            const payload = {
-                _func: 'updateAnchorRecord', // Assuming you create this function in DMAService.java
-                assessmentId: CURRENT_ASSESSMENT_ID,
-                blockchainTxId: txId,
-                tsiHash: tsiHash,
-                type: 'DMA' // Type of assessment being anchored
-            };
-
-            try {
-                const response = await fetch(DMA_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    return { success: true, message: 'Database updated successfully.' };
-                } else {
-                    return { success: false, message: `DB Update Failed: ${data.error_message || 'Unknown error.'}` };
-                }
-            } catch (error) {
-                return { success: false, message: `Network error during DB confirmation: ${error.message}` };
-            }
-        }
-
         /**
          * Initiates the blockchain anchoring process (Finalization).
          * This function now uses the client-side BSV Wallet SDK for demonstration.
          */
         async function anchorTSI() {
-            const btn = getButton('publish-btn');
-            btn.disabled = true;
-            btn.textContent = 'Anchoring...';
+            const tokenizeBtn = getButton('tokenize-btn');
+            const finalizeBtn = getButton('finalize-btn');
+            const msmeName = assessmentData.msmeName || 'this MSME';
+            if (!confirm(`Are you sure you want to anchor the data to the blockchain?`)) {
+                return;
+            }
+
+            tokenizeBtn.disabled = true;
+            tokenizeBtn.textContent = 'Anchoring...';
             showResultMessage('Initiating client-side token anchor...', 'info');
 
             // Define the JSON payload to be sent (Using hardcoded demo data)
             const tsiPayload = {
               "tsiData": {
-                "msmeId": "1",
-                "auditorId": "2",
-                "finalScore": 91.5,
-                "assessmentDate": "2025-11-04T10:30:00Z",
-                "version": "v1",
+                "tsiHash": TSI_HASH,
                 "type":"DMA"
               }
             };
@@ -210,23 +193,23 @@
 
                 const data = await response.json();
                 console.log(data);
-                if (response.ok) {
+                if (data.status) {
                     showResultMessage(`SUCCESS! Hash anchored. Tx ID: ${data.details}`, 'success');
                     document.getElementById('anchor-data').innerHTML = JSON.stringify(data, null, 2);
-                    btn.textContent = 'ANCHORED';
-                    btn.disabled = true;
-                    btn.classList.replace('primary-bg', 'bg-gray-500');
+                    tokenizeBtn.textContent = 'ANCHORED';
+                    BLOCKCHAIN_TXID = data.details;
+                    tokenizeBtn.disabled = true;
+                    tokenizeBtn.classList.replace('primary-bg', 'bg-gray-500');
+                    finalizeBtn.disabled = false;
+                    finalizeBtn.classList.replace('bg-gray-500','primary-bg');
                 } else {
                     showResultMessage(`ANCHOR FAILED: ${data.description || data.error_message}`, 'error');
                 }
             } catch (error) {
-                btn.disabled = false;
+                tokenizeBtn.disabled = false;
                 showResultMessage(`Client or Network Error: ${error.message}`, 'error');
                 console.error('[ERROR] Failed to anchor data:', error);
             } finally {
-                if (btn.textContent === 'Anchoring...') {
-                    btn.textContent = 'Publish & Anchor';
-                }
             }
         }
 
@@ -235,30 +218,15 @@
          */
         async function publishAssessment() {
             if (isFinalized) return;
+            alert('Are you sure you want to publish?');
+            const finalizeBtn = getButton('finalize-btn');
 
-            const publishBtn = getButton('publish-btn');
-            const msmeName = assessmentData.msmeName || 'this MSME';
-            if (!confirm(`Are you sure you want to PUBLISH this assessment and anchor the data to the blockchain? This action is irreversible.`)) {
-                return;
-            }
-
-            publishBtn.disabled = true;
-            publishBtn.textContent = 'Anchoring...';
-            showResultMessage(`Initiating finalization for ${msmeName}. This may take a moment.`, 'info');
-
-            // Execute the new anchoring function
-            await anchorTSI();
-
-            /*
-            // --- API CALL: finalizeassessment ---
-            // Send the required IDs and the final score/version as proof
             const payload = {
-                _func: 'finalize_assessment',
+                _func: 'finalize_assessment', // Assuming you create this function in DMAService.java
                 assessmentId: CURRENT_ASSESSMENT_ID,
-                msmeId: assessmentData.msmeId,
-                auditorId: assessmentData.auditorId, // Assuming auditorId is present in assessmentData
-                finalTsiScore: assessmentData.finalTsiScore,
-                version: dmaQuestionnaire.version
+                txId: BLOCKCHAIN_TXID,
+                tsiHash: TSI_HASH,
+                type: 'DMA'
             };
 
             try {
@@ -269,30 +237,25 @@
                 });
 
                 const data = await response.json();
-
-                if (response.ok && data.success) {
+                console.log(data);
+                if (data.success) {
                     isFinalized = true;
-                    showResultMessage(`SUCCESS! Assessment published and anchored. Tx ID: ${data.data.blockchainTxId}`, 'success');
+                    showResultMessage(`SUCCESS! Assessment published and anchored.`, 'success');
 
                     // Update UI state
-                    publishBtn.textContent = 'PUBLISHED';
-                    publishBtn.classList.replace('primary-bg', 'bg-gray-500');
+                    finalizeBtn.textContent = 'FINALIZED';
+                    finalizeBtn.disabled = true;
+                    finalizeBtn.classList.replace('primary-bg', 'bg-gray-500');
                     getButton('back-to-list-btn').textContent = 'Go to History';
                 } else {
-                    showResultMessage(`PUBLISH FAILED: ${data.error_details || data.error_message}`, 'error');
+                    showResultMessage(`DB UPDATE FAILED.`,'error');
                 }
             } catch (error) {
-                showResultMessage('Network error during publishing.', 'error');
-            } finally {
-                if (!isFinalized) {
-                    publishBtn.disabled = false;
-                    publishBtn.textContent = 'Publish & Anchor';
-                }
-            } */
+                 showResultMessage('Network error during publishing.', 'error');
+            }
         }
 
         // --- UI Rendering ---
-
         function renderAssessmentPreview() {
             const container = document.getElementById('assessment-form-container');
             const answers = assessmentData.assessmentDetailJson.results;
@@ -303,6 +266,9 @@
             // Update Header
             const title = dmaQuestionnaire.questionnaireTitle || 'Assessment Preview';
             const score = parseFloat(assessmentData.finalTsiScore || 0).toFixed(2);
+
+            TSI_HASH = assessmentData.tsiHash;
+            console.log(TSI_HASH);
 
             document.getElementById('questionnaire-title').textContent = title;
             document.getElementById('header-info').innerHTML = `
@@ -411,16 +377,23 @@
     <div class="sticky-footer sticky bottom-0 p-4 mt-6 card flex justify-between items-center z-10">
         <div id="result-message" class="text-lg font-bold hidden px-4 py-2 rounded-lg transition-opacity duration-300">
         </div>
+    </div>
 
+    <div class="sticky-footer sticky bottom-0 p-4 mt-6 card flex justify-between items-center z-10">
         <div class="flex space-x-4 ml-auto">
             <a href="auditor-assessment-list.html" id="back-to-list-btn"
                class="px-6 py-3 border border-gray-400 text-gray-700 bg-white rounded-lg font-semibold hover:bg-gray-100 transition duration-200 flex items-center">
                 ← Back to List
             </a>
 
-            <button type="button" id="publish-btn" onclick="publishAssessment()"
+            <button type="button" id="tokenize-btn" onclick="anchorTSI()"
                     class="px-6 py-3 primary-bg text-white rounded-lg font-semibold hover:bg-opacity-90 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                Publish & Anchor
+                Tokenize
+            </button>
+
+            <button type="button" id="finalize-btn" onclick="publishAssessment()"
+                    class="px-6 py-3 primary-bg text-white rounded-lg font-semibold hover:bg-opacity-90 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                Finalize
             </button>
         </div>
     </div>

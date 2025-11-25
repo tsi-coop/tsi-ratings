@@ -3,27 +3,27 @@
   "title": "Generated schema for Root",
   "type": "object",
   "properties": {
-    "_func": {
-      "type": "string"
-    },
     "assessmentId": {
       "type": "number"
     },
-    "msmeId": {
-      "type": "number"
+    "tsiHash": {
+      "type": "string"
     },
-    "finalTsiScore": {
-      "type": "number"
+    "txId": {
+      "type": "string"
     },
-    "version": {
+    "type": {
+      "type": "string"
+    },
+    "_func": {
       "type": "string"
     }
   },
   "required": [
-    "_func",
     "assessmentId",
-    "msmeId",
-    "finalTsiScore",
-    "version"
+    "tsiHash",
+    "txId",
+    "type",
+    "_func"
   ]
 }

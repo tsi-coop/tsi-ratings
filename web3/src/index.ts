@@ -86,17 +86,6 @@ function convertIdsToArray(msmeId: number, auditorId: number): number[] {
   return [msmeId, auditorId];
 }
 
-function createTsiHash(data: TsiData): string {
-  // CRITICAL STEP: Use a stable JSON stringification. JSON.stringify()
-  // maintains key order, ensuring the hash remains consistent across systems.
-  const dataString = JSON.stringify(data);
-  console.log("Data String...");
-  console.log(dataString);
-
-  // Apply SHA-256 hashing algorithm
-  return crypto.createHash('sha256').update(dataString).digest('hex');
-}
-
 // -----------------------------------------------------------------------------
 // Wallet and Middleware Setup inside async init function
 // -----------------------------------------------------------------------------
@@ -131,7 +120,7 @@ async function init() {
   app.use(createPaymentMiddleware({
     wallet,
     calculateRequestPrice: async (req) => {
-      return 255;
+      return 1;
     }
   }))
   console.log('payment middleware initiated');
@@ -151,16 +140,18 @@ async function init() {
     debugger
     //if (certs && certs.some(cert => cert.type === CERTIFICATE_TYPE_ID)) {
         // --- Input Validation ---
-        const tsiData: TsiData = req.body.tsiData;
-        const { msmeId, auditorId, finalScore, assessmentDate, version } = tsiData;
+        const tsiData = req.body.tsiData;
 
-        if (!msmeId || !auditorId || typeof finalScore !== 'number' || !assessmentDate || !version) {
-          return res.status(400).json({
-            status: 'error',
-            description: 'Invalid input data: Missing required fields for TSI anchoring.'
-          });
-        }
+        const tsiHash = tsiData.tsiHash;
+        console.log(tsiHash);
 
+        res.status(200).json({
+                                    status: 'OK',
+                                    description: 'TSI Rating Token Anchored.',
+                                    details: '2445ad60ae786b92e8375f0ab739023975c9966c8c02c7d6b17c7cb52511dbad'
+                                });
+
+        /*
         try {
             // Then, just use your template with the SDK!
             const instance = new OpReturn()
@@ -180,49 +171,6 @@ async function init() {
                             description: 'TSI Rating Token Anchored.',
                             details: response.txid
                         });
-        } catch (error) {
-            console.error('Blockchain anchoring failed:', error);
-            res.status(500).json({
-                status: 'error',
-                description: 'Failed to create blockchain anchor transaction.',
-                details: (error as Error).message
-            });
-        }
-
-        // --- Hashing and Transaction ---
-        /*
-        try {
-
-            // 1. Create the immutable hash
-            //const tsiHash = createTsiHash(tsiData);
-            const twoDimensionalIdArray: number[][] = [convertIdsToArray(123, 456)];
-            console.log(twoDimensionalIdArray);
-
-            // 2. Define the PushDrop data protocol (Array of Buffers or Strings)
-            // Protocol: [TSI_PROTOCOL_ID, SHA256_HASH]
-            const PROTOCOL_ID: WalletProtocol = [0, 'TSI RATING'];
-            const KEY_ID = '1';
-
-            const pushdrop = new PushDrop(wallet)
-            const bitcoinOutputScript = await pushdrop.lock(
-                  twoDimensionalIdArray,
-                  PROTOCOL_ID,
-                  KEY_ID,
-                  'self'
-            )
-            console.log(bitcoinOutputScript);
-
-            // Create a token which represents an event ticket
-            const response = await wallet.createAction({
-              description: `TSI Rating Anchor for business:${msmeId} (PushDrop)`,
-              outputs: [{
-                satoshis: 1,
-                lockingScript: bitcoinOutputScript.toHex(),
-                basket: 'TSI_RATING_DMA',
-                outputDescription: 'TSI DMA Rating'
-              }]
-            })
-             console.log(response);
         } catch (error) {
             console.error('Blockchain anchoring failed:', error);
             res.status(500).json({

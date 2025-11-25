@@ -75,8 +75,10 @@ public class DMA implements Action {
                     break;
 
                 case "finalize_assessment":
-                    // Auditor confirms final submission, triggers anchoring.
-                    output = finalizeAssessment(assessmentId, auditorId, input);
+                    // Auditor confirms final submission
+                    String txId = (String) input.get("txId");
+                    String tsiHash = (String) input.get("tsiHash");
+                    output =  updateAnchorRecord(assessmentId, txId, tsiHash, "DMA");
                     OutputProcessor.send(res, HttpServletResponse.SC_ACCEPTED, output);
                     break;
 
@@ -389,9 +391,7 @@ public class DMA implements Action {
                 output.put("assessmentId", assessmentId);
                 output.put("message", "Assessment submitted, but blockchain anchoring failed. Status remains 'AUDITED'. Please notify admin.");
             }
-
             output.put("success", true);
-
         } catch (SQLDataException e) {
             if (conn != null) conn.rollback();
             output.put("error", true);
@@ -423,7 +423,7 @@ public class DMA implements Action {
     /**
      * [HELPER] Inserts the blockchain anchor proof into the AnchorRecord table and updates DMA_Assessment status.
      */
-    private void updateAnchorRecord(Long assessmentId, String txId, String tsiHash, String type) throws SQLException {
+    private JSONObject updateAnchorRecord(Long assessmentId, String txId, String tsiHash, String type) throws SQLException {
         // ... (implementation remains the same as provided in the previous turn)
         Connection conn = null;
         PreparedStatement pstmtAnchor = null;
@@ -438,7 +438,6 @@ public class DMA implements Action {
         try {
             conn = pool.getConnection();
             conn.setAutoCommit(false);
-
             pstmtAnchor = conn.prepareStatement(sqlAnchor);
             pstmtAnchor.setLong(1, assessmentId);
             pstmtAnchor.setString(2, type);
@@ -458,6 +457,7 @@ public class DMA implements Action {
             pool.cleanup(null, pstmtAnchor, null);
             pool.cleanup(null, pstmtUpdate, conn);
         }
+        return new JSONObject() {{ put("success", true);}};
     }
 
     /**
@@ -471,7 +471,6 @@ public class DMA implements Action {
             return null;
         }
     }
-
 
     /**
      * Retrieves the comprehensive details of a single DMA assessment.
@@ -509,12 +508,15 @@ public class DMA implements Action {
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
+                double score = rs.getObject("finalTsiScore") != null ? rs.getDouble("finalTsiScore") : 0.0;
+                String completionDate = rs.getTimestamp("completionDate") != null ? rs.getTimestamp("completionDate").toInstant().toString() : null;
+
                 // --- Core Assessment Data ---
                 result.put("assessmentId", rs.getLong("assessmentId"));
                 result.put("msmeId", rs.getLong("msmeId"));
-                result.put("finalTsiScore", rs.getObject("finalTsiScore") != null ? rs.getDouble("finalTsiScore") : null);
+                result.put("finalTsiScore", score );
                 result.put("status", rs.getString("status"));
-                result.put("completionDate", rs.getTimestamp("completionDate") != null ? rs.getTimestamp("completionDate").toInstant().toString() : null);
+                result.put("completionDate", completionDate);
 
                 // --- MSME & Auditor Data ---
                 result.put("msmeName", rs.getString("msme_name"));
@@ -531,10 +533,13 @@ public class DMA implements Action {
                 // --- Anchor Record Data (Proof of Immutability) ---
                 if (rs.getString("blockchainTxId") != null) {
                     JSONObject anchor = new JSONObject();
-                    anchor.put("blockchainTxId", rs.getString("blockchainTxId"));
-                    anchor.put("tsiHash", rs.getString("tsiHash"));
-                    anchor.put("anchorDate", rs.getTimestamp("anchorDate").toInstant().toString());
-                    result.put("anchorRecord", anchor);
+                    result.put("blockchainTxId", rs.getString("blockchainTxId"));
+                    result.put("tsiHash", rs.getString("tsiHash"));
+                    result.put("anchorDate", rs.getTimestamp("anchorDate").toInstant().toString());
+                }else{
+                    result.put("tsiHash", generateAssessmentString( assessmentId,
+                                                                    score,
+                                                                    completionDate));
                 }
             } else {
                 throw new SQLException("Assessment not found for ID: " + assessmentId);
@@ -545,6 +550,25 @@ public class DMA implements Action {
         }
         return new JSONObject() {{ put("success", true); put("data", result); }};
     }
+
+    /**
+     * Generates a concatenated string from MSME assessment data.
+     */
+    private static String generateAssessmentString(
+            Object assessmentId,
+            Object finalScore,
+            Object assessmentDate) {
+
+        final String DELIMITER = "|";
+
+        return String.valueOf(assessmentId)
+                + DELIMITER
+                + String.valueOf(finalScore)
+                + DELIMITER
+                + String.valueOf(assessmentDate);
+    }
+
+
 
     private JSONObject validateAssessment(JSONObject input) throws Exception { /* ... */ return new JSONObject(); }
     private JSONObject callExpressService(String urlString, JSONObject payload) throws Exception {
