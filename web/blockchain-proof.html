@@ -88,8 +88,8 @@
                     return;
                 }
 
-                storedTxId = dbData.txId;
-                storedTsiHash = dbData.anchoredHash;
+                storedTxId = dbData.blockchainTxId;
+                storedTsiHash = dbData.tsiHash;
 
                 if (!storedTxId || !storedTsiHash) {
                     showVerificationStatus('Assessment found, but blockchain anchor is missing or incomplete.', 'error');
