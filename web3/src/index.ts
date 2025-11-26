@@ -145,21 +145,21 @@ async function init() {
         const tsiHash = tsiData.tsiHash;
         console.log(tsiHash);
 
-        res.status(200).json({
+      /*   res.status(200).json({
                                     status: 'OK',
                                     description: 'TSI Rating Token Anchored.',
                                     details: '2445ad60ae786b92e8375f0ab739023975c9966c8c02c7d6b17c7cb52511dbad'
-                                });
+                                }); */
 
-        /*
+
         try {
             // Then, just use your template with the SDK!
             const instance = new OpReturn()
             const response = await wallet.createAction({
-              description: `TSI Rating Anchor for business:${msmeId} (OpReturn)`,
+              description: `TSI Rating Anchor for business`,
               outputs: [{
                 satoshis: 1,
-                lockingScript: instance.lock(createTsiHash(tsiData)).toHex(),
+                lockingScript: instance.lock(tsiHash).toHex(),
                 basket: 'TSI_RATING_DMA',
                 outputDescription: 'TSI DMA Rating'
               }]
@@ -179,7 +179,7 @@ async function init() {
                 details: (error as Error).message
             });
         }
-        */
+
   });
 
   // Start the server.
