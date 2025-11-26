@@ -64,8 +64,10 @@
         const CURRENT_ASSESSMENT_ID = parseInt(urlParams.get('assessmentId')) || 0;
 
         // Placeholder values for display (Should be fetched with saved data)
-        const CURRENT_MSME_NAME = "Shakti Textiles & Exports";
-        const CURRENT_AUDITOR_NAME = "Alex Johnson";
+        const CURRENT_MSME_NAME = urlParams.get('msmeName');
+        const CURRENT_MSME_ID = parseInt(urlParams.get('msmeId')) || 0;
+        const CURRENT_AUDITOR_NAME = "IT Auditor";
+        const CURRENT_AUDITOR_ID = 8;
 
         let dmaQuestionnaire = null;
         let assessmentResults = {}; // Will hold Q-ID -> Value map
@@ -102,8 +104,8 @@
 
             const payload = {
                 assessmentId: CURRENT_ASSESSMENT_ID,
-                msmeId: 10,
-                auditorId: 8,
+                msmeId: CURRENT_MSME_ID,
+                auditorId: CURRENT_AUDITOR_ID,
                 qualitativeNotes: qualitativeNotes,
                 finalTsiScore: currentScore,
                 assessmentDetailJson: {
