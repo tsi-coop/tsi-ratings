@@ -15,6 +15,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.Iterator;
 import java.util.UUID; // Used for simulating blockchain TX IDs
 
 /**
@@ -227,11 +228,14 @@ public class DMA implements Action {
             assessmentDetailJson.put("lastSavedAt", new Timestamp(System.currentTimeMillis()).toString());
         }
 
-        String jsonDetail = assessmentDetailJson.toJSONString();
 
         String sql = "";
         boolean isNewAssessment = (assessmentId == null || assessmentId.longValue() == 0L);
 
+        JSONObject template = SystemConfig.readJSONTemplate("/WEB-INF/assessments/dma-v1.json");
+        JSONObject results = eval(template, (JSONObject) assessmentDetailJson.get("results"));
+        finalTsiScore = (double)(int) results.get("score");
+        String jsonDetail = assessmentDetailJson.toJSONString();
         try {
             conn = pool.getConnection();
             conn.setAutoCommit(false);
@@ -305,6 +309,100 @@ public class DMA implements Action {
     // ------------------------------------------
     // Existing/Helper Functions (Moved/Simplified)
     // ------------------------------------------
+
+    private JSONObject eval(JSONObject template, JSONObject data){
+        JSONObject results = new JSONObject();
+        JSONArray sections = null;
+        String sectionTitle = null;
+        Iterator<JSONObject> sectionIt = null;
+        JSONObject sectionOb = null;
+        JSONArray questions = null;
+        Iterator<JSONObject> questionIt = null;
+        JSONObject questionOb = null;
+        String qid = null;
+        String value = null;
+        int valueInt = 0;
+        int score = 0;
+        int sectionScore = 0;
+        int sectionCount = 0;
+        float sectionAvg = 0f;
+        String assessmentType = null;
+        JSONArray strengths = new JSONArray();
+        JSONArray weaknesses = new JSONArray();
+
+        assessmentType = (String) template.get("assessment_type");
+        sections = (JSONArray) template.get("sections");
+        sectionIt = sections.iterator();
+        while(sectionIt.hasNext()){
+            sectionOb = (JSONObject) sectionIt.next();
+            sectionTitle = (String) sectionOb.get("sectionTitle");
+            questions = (JSONArray) sectionOb.get("questions");
+            questionIt = questions.iterator();
+            sectionScore = 0;sectionCount = 0;
+            while(questionIt.hasNext()){
+                questionOb = (JSONObject) questionIt.next();
+                qid = (String) questionOb.get("questionId");
+                valueInt =  (int)(long) data.get(qid);
+                score += valueInt;
+                sectionCount++;
+                sectionScore += valueInt;
+            }
+            sectionAvg = sectionScore/sectionCount;
+            if(sectionAvg>=4){
+                strengths.add(sectionTitle);
+            }else if(sectionAvg<=2){
+                weaknesses.add(sectionTitle);
+            }
+        }
+
+        if(score<=28){
+                results.put("rating",1);
+                results.put("rating_summary","Level 1: Nascent");
+                results.put("score",score);
+                results.put("description","The organisation has very limited digital adoption, largely relies on manual processes, and lacks a clear digital strategy. Digital tools, if used, are isolated and reactive. Awareness of digital potential is low.");
+                results.put("characteristics","Primarily offline, basic communication, no structured data, high manual effort, low digital skill set.");
+                results.put("strengths",strengths);
+                results.put("areas_for_improvement",weaknesses);
+                results.put("recommendation", "Focus on foundational digital literacy, basic online presence (GMB, social media), and initial digitization of core administrative tasks.");
+            }else if(score<=41){
+                results.put("rating",2);
+                results.put("rating_summary","Level 2: Emerging");
+                results.put("score",score);
+                results.put("description","The organisation has begun to adopt some digital tools, often in an uncoordinated manner. There's an awareness of digital benefits, but no cohesive strategy. Processes might be partially digitized.");
+                results.put("characteristics","Some online presence, basic use of digital communication, fragmented data, growing but inconsistent use of software.");
+                results.put("strengths",strengths);
+                results.put("areas_for_improvement",weaknesses);
+                results.put("recommendation", "Develop a simple digital roadmap, explore cloud tools for efficiency, establish basic cybersecurity, and offer introductory digital training.");
+            }else if(score<=54){
+                results.put("rating",3);
+                results.put("rating_summary","Level 3: Developing");
+                results.put("score",score);
+                results.put("description","The organisation is actively integrating digital tools into various aspects of its business. There's a nascent digital strategy, and some processes are becoming more efficient. Data collection exists but analysis might be limited.");
+                results.put("characteristics","Dedicated website, basic digital marketing, some internal collaboration tools, moderate digital skills, conscious of data.");
+                results.put("strengths",strengths);
+                results.put("areas_for_improvement",weaknesses);
+                results.put("recommendation", "Integrate existing digital tools, explore CRM/ERP Lite, implement structured digital marketing, and invest in targeted skill development.");
+            }else if(score<=67){
+                results.put("rating",4);
+                results.put("rating_summary","Level 4: Mature");
+                results.put("score",score);
+                results.put("description","The organisation leverages digital technologies strategically across most functions. They have a clear digital vision, data-driven decision-making is emerging, and cybersecurity is prioritized.");
+                results.put("characteristics","Strong online presence, active digital marketing, automated key processes, data-driven insights, proactive cybersecurity, good digital culture.");
+                results.put("strengths",strengths);
+                results.put("areas_for_improvement",weaknesses);
+                results.put("recommendation", "Optimize digital processes, explore advanced analytics, consider AI/automation pilot projects, and foster continuous digital innovation.");
+            }else{
+                results.put("rating",5);
+                results.put("rating_summary","Level 5: Advanced");
+                results.put("score",score);
+                results.put("description","The organisation is a digitally transformed entity, continuously innovating and leveraging technology to gain a competitive advantage. Digital is ingrained in its culture, strategy, and operations.");
+                results.put("characteristics","Digital-first approach, highly automated and integrated systems, advanced analytics, personalized customer experiences, robust cybersecurity, continuous digital learning and adaptation.");
+                results.put("strengths",strengths);
+                results.put("areas_for_improvement",weaknesses);
+                results.put("recommendation", " Explore disruptive technologies, engage in industry leadership, develop digital products/services, and benchmark against global best practices.");
+        }
+        return results;
+    }
 
     /**
      * Retrieves the latest DMA questionnaire structure.
