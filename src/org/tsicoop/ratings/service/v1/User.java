@@ -145,6 +145,11 @@ public class User implements Action {
                     break;
 
                 // --- Other Admin/User Functions (Placeholders) ---
+                case "get_msme_by_email":
+                    email = (String) input.get("email");
+                    output = getMsmeDetailsByEmail(email);
+                    OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
+                    break;
                 case "list_users":
                     // Placeholder for list_users logic
                     OutputProcessor.errorResponse(res, HttpServletResponse.SC_NOT_IMPLEMENTED, "Not Implemented", "list_users is not yet implemented.", req.getRequestURI());
@@ -214,6 +219,47 @@ public class User implements Action {
 
         } finally {
             pool.cleanup(null, pstmt, conn);
+        }
+        return result;
+    }
+
+    /**
+     * Retrieves essential MSME details (ID, Name) by the MSME Owner's email address.
+     * This is used by the IT Auditor to initiate a DMA assessment.
+     */
+    private JSONObject getMsmeDetailsByEmail(String email) throws SQLException {
+        JSONObject result = new JSONObject();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        PoolDB pool = new PoolDB();
+
+        // SQL joins User and MSME tables, filters by email, and ensures the user role is MSME_OWNER
+        String sql = "SELECT u.\"userId\" AS msme_user_id, m.\"companyName\", m.\"udyamRegistrationNo\" " +
+                "FROM \"User\" u " +
+                "JOIN \"MSME\" m ON u.\"userId\" = m.\"msmeId\" " +
+                "WHERE u.email = ?";
+
+        try {
+            conn = pool.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, email);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                result.put("success", true);
+                result.put("msmeId", rs.getLong("msme_user_id"));
+                result.put("companyName", rs.getString("companyName"));
+                result.put("udyamRegistrationNo", rs.getString("udyamRegistrationNo"));
+                result.put("message", "MSME details retrieved successfully.");
+            } else {
+                result.put("error", true);
+                result.put("status_code", HttpServletResponse.SC_NOT_FOUND);
+                result.put("error_message", "MSME not found.");
+                result.put("error_details", "No registered MSME account found for this email.");
+            }
+        } finally {
+            pool.cleanup(rs, pstmt, conn);
         }
         return result;
     }

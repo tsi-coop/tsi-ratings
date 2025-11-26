@@ -76,7 +76,31 @@
         }
 
         const DMA_API_URL = '/api/v1/dma';
+        const USER_API_URL = '/api/v1/user';
         const AUTH_TOKEN = localStorage.getItem('token');
+
+                // --- UI/Modal Functions ---
+
+        function openNewDmaModal() {
+            document.getElementById('new-dma-modal').classList.remove('hidden');
+            document.getElementById('msme-email-input').focus();
+        }
+
+        function closeNewDmaModal() {
+            document.getElementById('new-dma-modal').classList.add('hidden');
+            document.getElementById('modal-message').classList.add('hidden');
+        }
+
+        function showModalMessage(message, type = 'error') {
+            const msgEl = document.getElementById('modal-message');
+            msgEl.textContent = message;
+            msgEl.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'text-red-800', 'text-green-800');
+            if (type === 'success') {
+                msgEl.classList.add('bg-green-100', 'text-green-800');
+            } else {
+                msgEl.classList.add('bg-red-100', 'text-red-800');
+            }
+        }
 
       /**
          * Utility to map backend status strings to simplified frontend stages and CSS classes.
@@ -96,6 +120,66 @@
                 ] };
             }
             return { name: upperStatus, class: 'bg-gray-200 text-gray-700', actions: [] };
+        }
+
+         /**
+         * Step 1: Fetches MSME details by email and initiates the DMA.
+         */
+        async function fetchMsmeDetailsAndStartDMA(event) {
+            event.preventDefault();
+
+            const emailInput = document.getElementById('msme-email-input');
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                showModalMessage('Please enter a valid MSME Email.');
+                return;
+            }
+
+            const startDmaBtn = document.getElementById('start-dma-btn');
+            startDmaBtn.disabled = true;
+            startDmaBtn.textContent = 'Searching...';
+
+            showModalMessage('Searching for registered MSME...', 'info'); // Use info type which usually is blue/default
+
+            try {
+                // --- 1. CALL JAVA API: Get MSME by Email (Simulated endpoint) ---
+                const response = await fetch(USER_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+                    body: JSON.stringify({
+                        _func: 'get_msme_by_email',
+                        email: email
+                    })
+                });
+
+                const data = await response.json();
+                console.log(data);
+                if(data.success){
+                    const msmeId = data.msmeId;
+                    const msmeName = data.companyName;
+                    console.log(msmeId);
+                    showModalMessage(`MSME Found: ${msmeName}. Redirecting to assessment...`, 'success');
+
+                    // --- 2. Dispatch to DMA Assessment Screen ---
+                    const url = `dma-assessment.html?msmeId=${msmeId}&msmeName=${encodeURIComponent(msmeName)}`;
+                    window.location.href = url;
+                }
+                else{
+                    showModalMessage(data.message || `MSME not found or registration incomplete for: ${email}.`);
+                    return;
+                }
+
+
+
+
+            } catch (e) {
+                showModalMessage('Network error or invalid API response.', 'error');
+                console.error("Error fetching MSME details:", e);
+            } finally {
+                startDmaBtn.disabled = false;
+                startDmaBtn.textContent = 'Start DMA';
+            }
         }
 
        /**
@@ -188,6 +272,39 @@
 </head>
 <body class="flex h-screen">
 
+<!-- Modal for New DMA -->
+<div id="new-dma-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-backdrop">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-xl font-bold primary-text">Start New DMA Assessment</h3>
+            <button onclick="closeNewDmaModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+
+        <form onsubmit="fetchMsmeDetailsAndStartDMA(event)">
+            <div class="mb-4">
+                <label for="msme-email-input" class="block text-sm font-medium text-gray-700 mb-2">
+                    Enter MSME Owner Email (Must be Registered)
+                </label>
+                <input type="email" id="msme-email-input" required placeholder="msme@company.com"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-tsi-primary focus:border-tsi-primary">
+            </div>
+
+            <div id="modal-message" class="hidden p-3 mb-4 text-sm rounded-lg"></div>
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeNewDmaModal()"
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
+                    Cancel
+                </button>
+                <button type="submit" id="start-dma-btn"
+                        class="primary-bg text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition">
+                    Start DMA
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <aside class="sidebar primary-bg flex flex-col p-4 text-white">
     <div class="mb-8 p-2">
         <span class="text-xl font-bold ml-3">TSI Ratings</span>
@@ -224,10 +341,21 @@
             <p class="text-gray-500">View all Digital Maturity Assessments (DMA) assigned and completed.</p>
         </header>
 
-        <a href="dma-assessment.html?assessmentId=0" class="primary-bg text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:opacity-90 transition duration-150 flex items-center">
+        <a href="#" onclick="openNewDmaModal()" class="primary-bg text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:opacity-90 transition duration-150 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             New DMA
         </a>
+<!--
+        <header>
+            <div>
+            <h1 class="text-3xl font-bold text-gray-800">Assessment History & Status</h1>
+            <p class="text-gray-500">View all Digital Maturity Assessments (DMA) assigned and completed.</p>
+            <button onclick="openNewDmaModal()"
+                    class="primary-bg text-white px-6 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition shadow-md">
+                <i class="fas fa-plus mr-2"></i> New DMA
+            </button>
+            </div>
+        </header>-->
     </div>
 
     <section class="mb-10">
