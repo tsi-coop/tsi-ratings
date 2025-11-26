@@ -44,6 +44,8 @@ public class DMA implements Action {
         try {
             input = InputProcessor.getInput(req);
             String func = (String) input.get("_func");
+            String txId = (String) input.get("txId");
+            String tsiHash = (String) input.get("tsiHash");
 
             if (func == null || func.trim().isEmpty()) {
                 OutputProcessor.errorResponse(res, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", "Missing required '_func'.", req.getRequestURI());
@@ -76,8 +78,7 @@ public class DMA implements Action {
 
                 case "finalize_assessment":
                     // Auditor confirms final submission
-                    String txId = (String) input.get("txId");
-                    String tsiHash = (String) input.get("tsiHash");
+
                     output =  updateAnchorRecord(assessmentId, txId, tsiHash, "DMA");
                     OutputProcessor.send(res, HttpServletResponse.SC_ACCEPTED, output);
                     break;
@@ -92,8 +93,8 @@ public class DMA implements Action {
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
-                case "validate_dma_assessment":
-                    output = validateAssessment(input);
+                case "validate_assessment":
+                    output = validateAssessment(txId, tsiHash);
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
@@ -301,112 +302,6 @@ public class DMA implements Action {
         return new JSONObject() {{ put("success", true); put("data", result); }};
     }
 
-    /**
-     * Finalizes the assessment: verifies the latest saved data, updates status to 'AUDITED',
-     * and triggers the blockchain anchoring process.
-     */
-    private JSONObject finalizeAssessment(Long assessmentId, Long auditorId, JSONObject input) throws Exception {
-        Connection conn = null;
-        PreparedStatement pstmtUpdate = null;
-        ResultSet rs = null;
-        PoolDB pool = new PoolDB();
-        JSONObject output = new JSONObject();
-
-        // 1. Validate required fields for the final submission
-        Double finalTsiScore = getDoubleOrNull(input.get("finalTsiScore"));
-        String version = (String) input.get("version");
-        if (finalTsiScore == null || version == null) {
-            output.put("error", true);
-            output.put("status_code", (long) HttpServletResponse.SC_BAD_REQUEST);
-            output.put("error_message", "Missing required score or version for finalization.");
-            return output;
-        }
-
-        // 2. Retrieve all data from the DMA_Assessment table and lock the row
-        String selectSql = "SELECT \"msmeId\", \"auditorId\", \"finalTsiScore\", \"requestFormJson\", \"assessmentDetailJson\" " +
-                "FROM \"DMA_Assessment\" WHERE \"assessmentId\" = ? AND \"auditorId\" = ? AND \"status\" = 'PENDING' FOR UPDATE";
-
-        try {
-            conn = pool.getConnection();
-            conn.setAutoCommit(false); // Start transaction
-
-            pstmtUpdate = conn.prepareStatement(selectSql);
-            pstmtUpdate.setLong(1, assessmentId);
-            pstmtUpdate.setLong(2, auditorId);
-            rs = pstmtUpdate.executeQuery();
-
-            if (!rs.next()) {
-                throw new SQLDataException("Assessment cannot be finalized (Not found, not assigned, or already processed).");
-            }
-
-            // Extract necessary data for anchoring
-            Long msmeId = rs.getLong("msmeId");
-            // Use the score and detail JSON saved in the DB, but re-validate against the final score provided by the client
-            Double dbFinalTsiScore = rs.getDouble("finalTsiScore");
-            String requestFormJsonString = rs.getString("requestFormJson");
-            String assessmentDetailJsonString = rs.getString("assessmentDetailJson");
-
-            if (dbFinalTsiScore != finalTsiScore.doubleValue()) {
-                throw new SQLDataException("Client score mismatch with the latest saved score. Please recalculate and save.");
-            }
-            if (assessmentDetailJsonString == null || assessmentDetailJsonString.isEmpty()) {
-                throw new SQLDataException("Assessment details are missing. Please ensure the assessment is fully saved before finalizing.");
-            }
-
-            // 3. Update DMA_Assessment Status to 'AUDITED' and set final date
-            // The status is 'AUDITED' until the external service confirms 'ANCHORED'.
-            String updateSql = "UPDATE \"DMA_Assessment\" SET \"status\" = 'AUDITED', \"completionDate\" = NOW() WHERE \"assessmentId\" = ?";
-            pstmtUpdate = conn.prepareStatement(updateSql);
-            pstmtUpdate.setLong(1, assessmentId);
-            pstmtUpdate.executeUpdate();
-
-            conn.commit(); // Commit the status update and final date
-
-            // 4. Trigger Blockchain Anchoring
-            // We need the data structures to send to the external service
-            JSONObject anchorData = new JSONObject();
-            anchorData.put("assessmentId", assessmentId);
-            anchorData.put("msmeId", msmeId.toString());
-            anchorData.put("auditorId", auditorId.toString());
-            anchorData.put("finalScore", finalTsiScore);
-            anchorData.put("assessmentDate", new Timestamp(System.currentTimeMillis()).toInstant().toString());
-            anchorData.put("type", "DMA");
-            anchorData.put("version", version);
-            anchorData.put("detailJson", assessmentDetailJsonString); // Send the full payload for hashing
-
-            JSONObject expressResponse = callExpressService(EXPRESS_ANCHOR_API_URL, anchorData);
-
-            // 5. Update AnchorRecord table based on ExpressJS response
-            if ("success".equals(expressResponse.get("status"))) {
-                String txId = (String) expressResponse.get("blockchainTxId");
-                String tsiHash = (String) expressResponse.get("tsiHash");
-                updateAnchorRecord(assessmentId, txId, tsiHash, "DMA"); // Updates status to ANCHORED
-
-                output.put("assessmentId", assessmentId);
-                output.put("message", "Assessment successfully finalized and anchored to blockchain.");
-                output.put("blockchainTxId", txId);
-            } else {
-                // Anchoring failed, log and inform the user. Status remains 'AUDITED'.
-                System.err.println("Blockchain anchoring failed for assessment ID " + assessmentId + ": " + expressResponse.get("message"));
-                output.put("assessmentId", assessmentId);
-                output.put("message", "Assessment submitted, but blockchain anchoring failed. Status remains 'AUDITED'. Please notify admin.");
-            }
-            output.put("success", true);
-        } catch (SQLDataException e) {
-            if (conn != null) conn.rollback();
-            output.put("error", true);
-            output.put("status_code", (long) HttpServletResponse.SC_BAD_REQUEST);
-            output.put("error_message", "Finalization Validation Error - "+e.getMessage());
-            return output;
-        } catch (SQLException e) {
-            if (conn != null) conn.rollback();
-            throw e; // Re-throw generic SQL error
-        } finally {
-            pool.cleanup(rs, pstmtUpdate, conn);
-        }
-        return new JSONObject() {{ put("success", true); put("data", output); }};
-    }
-
     // ------------------------------------------
     // Existing/Helper Functions (Moved/Simplified)
     // ------------------------------------------
@@ -568,17 +463,16 @@ public class DMA implements Action {
                 + String.valueOf(assessmentDate);
     }
 
-
-
-    private JSONObject validateAssessment(JSONObject input) throws Exception { /* ... */ return new JSONObject(); }
-    private JSONObject callExpressService(String urlString, JSONObject payload) throws Exception {
-        // Mock response for callExpressService
-        JSONObject mockResponse = new JSONObject();
-        mockResponse.put("status", "success");
-        mockResponse.put("blockchainTxId", "TX-" + UUID.randomUUID().toString().replace("-", ""));
-        mockResponse.put("tsiHash", "HASH-" + UUID.randomUUID().toString().replace("-", ""));
-        return mockResponse;
+    private JSONObject validateAssessment(String txId,String tsiHash) throws Exception {
+        JSONObject result =  new JSONObject();
+        try {
+            result = new BSVUtil().validateAssessment(txId, tsiHash);
+        }catch(Exception e){
+            result.put("failed",true);
+        }
+        return result;
     }
+
 
 
     @Override

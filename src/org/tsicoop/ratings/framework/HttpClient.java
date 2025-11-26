@@ -38,7 +38,7 @@ public class HttpClient {
     }
 
 
-    public void sendGet(String url) throws Exception {
+    public JSONObject sendGet(String url) throws Exception {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .GET()
@@ -52,6 +52,8 @@ public class HttpClient {
 
         // print response body
         System.out.println(response.body());
+
+        return (JSONObject) new JSONParser().parse(response.body());
 
     }
 

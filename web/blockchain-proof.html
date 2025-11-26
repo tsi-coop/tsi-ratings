@@ -113,7 +113,7 @@
             const validateBtn = document.getElementById('validate-button');
             validateBtn.disabled = true;
 
-            showVerificationStatus('Step 2: Retrieving PushDrop data from external explorer...', 'loading');
+            showVerificationStatus('Step 2: Retrieving data from external explorer...', 'loading');
 
             try {
                 if (!storedTxId || !storedTsiHash) {
@@ -121,17 +121,14 @@
                     return;
                 }
 
-                // 2. CALL EXTERNAL EXPLORER to retrieve on-chain data (Simulation)
-                const onChainHash = await fetchOnChainHash(storedTxId, storedTsiHash);
-
-                // 3. Perform Final Comparison
-                if (onChainHash === storedTsiHash) {
+                // 2. CALL EXTERNAL EXPLORER to retrieve on-chain data
+                const result = await matchOnChainHash(storedTxId, storedTsiHash);
+                console.log(result);
+                if (result.valid === true) {
                     showVerificationStatus('VERIFICATION SUCCESS: Presented Hash MATCHES On-Chain Hash!', 'match');
                     document.getElementById('explorer-link').classList.remove('hidden');
                 } else {
                     showVerificationStatus('VERIFICATION FAILED: Hash Mismatch Detected!', 'mismatch');
-                    document.getElementById('anchored-data-container').innerHTML += `<p class="mt-4 text-red-700"><strong>On-Chain Hash Retrieved:</strong> <span class="hash-code">${onChainHash}</span></p>`;
-                    document.getElementById('anchored-data-container').innerHTML += `<p class="text-red-700">Integrity check failed. The record has been tampered with or is corrupted.</p>`;
                 }
 
             } catch (error) {
@@ -172,21 +169,20 @@
          * Simulates fetching the inscribed hash from an external explorer (WhatOnChain).
          * This simulates the ExpressJS verification endpoint's core task (retrieving the hash).
          */
-        async function fetchOnChainHash(txId, expectedHash) {
-            // Mock delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
+        async function matchOnChainHash(txId, expectedHash) {
+            // In reality, Java middleware would query DMA_Assessment JOIN AnchorRecord by assessmentId.
+            const response = await fetch(DMA_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+                body: JSON.stringify({
+                    _func: 'validate_assessment',
+                    txId: storedTxId,
+                    tsiHash: storedTsiHash
+                })
+            });
 
-            // Hardcoded success/fail logic for demo:
-            if (txId.startsWith('a1b2c3d4e5')) {
-                // Success path: Hash matches the expected value
-                return expectedHash;
-            } else if (txId.startsWith('f0f0f0f0f0')) {
-                // Fail path: Hash mismatch (simulated tampering)
-                return "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-            } else {
-                 // Default path: Just return the expected hash
-                 return expectedHash;
-            }
+            const result = await response.json();
+            return result;
         }
 
         // --- UI Display Helpers ---
@@ -225,7 +221,7 @@
 <div class="verification-card">
   <header class="text-center mb-8">
     <h1 class="text-3xl font-extrabold primary-text mb-2">Blockchain Proof Verification</h1>
-    <p class="text-gray-500">Validation of MSI operational score integrity against the public ledger.</p>
+    <p class="text-gray-500">Validation of TSI Digital Maturity score integrity against the public ledger.</p>
   </header>
 
   <!-- Result Container -->
