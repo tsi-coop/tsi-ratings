@@ -129,6 +129,19 @@ public class InputProcessor {
         return name;
     }
 
+    public static Long getUserId(HttpServletRequest req){
+        JSONObject authToken = null;
+        long userId = 0L;
+        try {
+            authToken = (JSONObject) req.getAttribute(InputProcessor.AUTH_TOKEN);
+            //System.out.println("authToken:"+authToken);
+            userId = Long.parseLong((String)authToken.get("userId"));
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return userId;
+    }
+
     public static String getRole(HttpServletRequest req){
         JSONObject authToken = null;
         String role = null;
@@ -193,7 +206,7 @@ public class InputProcessor {
             if (JWTUtil.isTokenValid(token)) {
                 tokenDetails = new JSONObject();
                 tokenDetails.put("email",JWTUtil.getEmailFromToken(token));
-                tokenDetails.put("name",JWTUtil.getNameFromToken(token));
+                tokenDetails.put("userId",JWTUtil.getUserIdFromToken(token));
                 tokenDetails.put("role",JWTUtil.getRoleFromToken(token));
                 //System.out.println("name:"+JWTUtil.getUsernameFromToken(token)+" role:"+JWTUtil.getRoleFromToken(token));
             }

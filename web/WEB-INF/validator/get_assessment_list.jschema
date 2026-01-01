@@ -5,13 +5,9 @@
   "properties": {
     "_func": {
       "type": "string"
-    },
-    "auditorId": {
-      "type": "number"
     }
   },
   "required": [
-    "_func",
-    "auditorId"
+    "_func"
   ]
 }

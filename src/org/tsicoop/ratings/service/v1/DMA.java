@@ -38,9 +38,7 @@ public class DMA implements Action {
         JSONObject input = null;
         JSONObject output = null;
 
-        // NOTE: Authentication context check and AuditorId retrieval is critical here.
-        // Long auditorId = getAuditorIdFromAuthContext(req);
-        Long auditorId = 8L; // Hardcoded Placeholder ID for demonstration
+        Long auditorId = InputProcessor.getUserId(req);
 
         try {
             input = InputProcessor.getInput(req);
@@ -85,7 +83,7 @@ public class DMA implements Action {
                     break;
 
                 case "get_assessment_list":
-                    output = getAssessmentList(input);
+                    output = getAssessmentList(input, auditorId);
                     OutputProcessor.send(res, HttpServletResponse.SC_OK, output);
                     break;
 
@@ -117,29 +115,7 @@ public class DMA implements Action {
      * * @param input JSON object containing "auditorId".
      * @return JSONObject containing success status and an array of assessment records.
      */
-    private JSONObject getAssessmentList(JSONObject input) throws SQLException {
-        Long auditorId = null;
-        Object auditorIdObj = input.get("auditorId");
-
-        if (auditorIdObj == null) {
-            JSONObject error = new JSONObject();
-            error.put("error", true);
-            error.put("status_code", (long) HttpServletResponse.SC_BAD_REQUEST);
-            error.put("error_message", "Auditor ID is required to fetch the assessment list.");
-            return error;
-        }
-
-        try {
-            // Ensure auditorId is parsed correctly (handling String or Long input)
-            auditorId = Long.parseLong(auditorIdObj.toString());
-        } catch (NumberFormatException e) {
-            JSONObject error = new JSONObject();
-            error.put("error", true);
-            error.put("status_code", (long) HttpServletResponse.SC_BAD_REQUEST);
-            error.put("error_message", "Invalid format for auditorId.");
-            return error;
-        }
-
+    private JSONObject getAssessmentList(JSONObject input, long auditorId) throws SQLException {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -153,9 +129,9 @@ public class DMA implements Action {
         String sql = "SELECT dma.\"assessmentId\", dma.\"msmeId\", dma.\"finalTsiScore\", dma.status, dma.\"completionDate\", " +
                 "m.\"companyName\", " +
                 "ar.\"blockchainTxId\" " +
-                "FROM \"DMA_Assessment\" dma " +
-                "JOIN \"MSME\" m ON dma.\"msmeId\" = m.\"msmeId\" " +
-                "LEFT JOIN \"AnchorRecord\" ar ON dma.\"assessmentId\" = ar.\"anchorId\" " +
+                "FROM \"dma_assessment\" dma " +
+                "JOIN \"msme\" m ON dma.\"msmeId\" = m.\"msmeId\" " +
+                "LEFT JOIN \"anchor_record\" ar ON dma.\"assessmentId\" = ar.\"anchorId\" " +
                 "WHERE dma.\"auditorId\" = ?";
 
         try {
@@ -246,9 +222,10 @@ public class DMA implements Action {
                     throw new IllegalArgumentException("msmeId is required to create a new assessment.");
                 }
 
-                sql = "INSERT INTO \"DMA_Assessment\" (\"msmeId\", \"auditorId\", \"finalTsiScore\", \"status\", \"assessmentDetailJson\", \"completionDate\") " +
+                sql = "INSERT INTO \"dma_assessment\" (\"msmeId\", \"auditorId\", \"finalTsiScore\", \"status\", \"assessmentDetailJson\", \"completionDate\") " +
                         "VALUES (?, ?, ?, 'PENDING', ?::jsonb, NOW()) RETURNING \"assessmentId\"";
 
+                //System.out.println("MSME Id:"+msmeId+" Auditor Id:"+auditorId);
                 pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                 pstmt.setLong(1, msmeId);
                 pstmt.setLong(2, auditorId);
@@ -258,7 +235,7 @@ public class DMA implements Action {
             } else {
                 // --- UPDATE LOGIC (Existing Assessment) ---
                 // Only allow update if the assessment is PENDING and assigned to the correct auditor
-                sql = "UPDATE \"DMA_Assessment\" SET \"finalTsiScore\" = ?, \"assessmentDetailJson\" = ?::jsonb, \"completionDate\" = NOW() " +
+                sql = "UPDATE \"dma_assessment\" SET \"finalTsiScore\" = ?, \"assessmentDetailJson\" = ?::jsonb, \"completionDate\" = NOW() " +
                         "WHERE \"assessmentId\" = ? AND \"auditorId\" = ? AND \"status\" = 'PENDING'";
 
                 pstmt = conn.prepareStatement(sql);
@@ -424,9 +401,9 @@ public class DMA implements Action {
         PoolDB pool = new PoolDB();
 
         // 1. Insert into AnchorRecord
-        String sqlAnchor = "INSERT INTO \"AnchorRecord\" (\"anchorId\", \"type\", \"blockchainTxId\", \"tsiHash\", \"anchorDate\", \"blockchainNetwork\") VALUES (?, ?, ?, ?, NOW(), 'TSI-Ledger')";
+        String sqlAnchor = "INSERT INTO \"anchor_record\" (\"anchorId\", \"type\", \"blockchainTxId\", \"tsiHash\", \"anchorDate\", \"blockchainNetwork\") VALUES (?, ?, ?, ?, NOW(), 'TSI-Ledger')";
         // 2. Update DMA_Assessment status
-        String sqlUpdate = "UPDATE \"DMA_Assessment\" SET status = 'ANCHORED' WHERE \"assessmentId\" = ?";
+        String sqlUpdate = "UPDATE \"dma_assessment\" SET status = 'ANCHORED' WHERE \"assessmentId\" = ?";
 
         try {
             conn = pool.getConnection();
@@ -488,10 +465,10 @@ public class DMA implements Action {
         String sql = "SELECT dma.\"assessmentId\", dma.\"msmeId\", dma.\"finalTsiScore\", dma.status, dma.\"completionDate\", dma.\"requestFormJson\", dma.\"assessmentDetailJson\", " +
                 "ar.\"blockchainTxId\", ar.\"tsiHash\", ar.\"anchorDate\", " +
                 "u.email AS auditor_email, m.\"companyName\" AS msme_name, m.\"udyamRegistrationNo\" " +
-                "FROM \"DMA_Assessment\" dma " +
-                "JOIN \"User\" u ON dma.\"auditorId\" = u.\"userId\" " +
-                "JOIN \"MSME\" m ON dma.\"msmeId\" = m.\"msmeId\" " +
-                "LEFT JOIN \"AnchorRecord\" ar ON dma.\"assessmentId\" = ar.\"anchorId\" " +
+                "FROM \"dma_assessment\" dma " +
+                "JOIN \"users\" u ON dma.\"auditorId\" = u.\"userId\" " +
+                "JOIN \"msme\" m ON dma.\"msmeId\" = m.\"msmeId\" " +
+                "LEFT JOIN \"anchor_record\" ar ON dma.\"assessmentId\" = ar.\"anchorId\" " +
                 "WHERE dma.\"assessmentId\" = ?";
 
         try {

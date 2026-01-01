@@ -25,9 +25,9 @@ public class JWTUtil {
         return createToken(claims, email);
     }
 
-    public static String generateToken(String email, String username, String role) {
+    public static String generateToken(String email, long userId, String role) {
         Map<String, String> claims = new HashMap<String,String>();
-        claims.put("name",username);
+        claims.put("userId",userId+"");
         claims.put("role",role);
         return createToken(claims, email);
     }
@@ -71,6 +71,16 @@ public class JWTUtil {
                 .getBody();
 
         return (String) claims.get("name");
+    }
+
+    public static String getUserIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return (String) claims.get("userId");
     }
 
     public static String getRoleFromToken(String token) {

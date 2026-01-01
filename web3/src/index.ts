@@ -121,6 +121,7 @@ async function init() {
     wallet,
     calculateRequestPrice: async (req) => {
       return 1;
+      //return 260;
     }
   }))
   console.log('payment middleware initiated');

@@ -6,7 +6,7 @@
 ---
 -- 1. User Table (Stores credentials, professional identity, and OTP state)
 ---
-CREATE TABLE "User" (
+CREATE TABLE "users" (
     "userId" BIGSERIAL PRIMARY KEY,
     "email" VARCHAR(255) NOT NULL UNIQUE,
     "role" VARCHAR(50) NOT NULL CHECK ("role" IN ('admin', 'msme', 'auditor', 'lender')),
@@ -25,15 +25,15 @@ CREATE TABLE "User" (
 );
 
 -- Index for efficient email lookup during login/OTP request
-CREATE UNIQUE INDEX idx_user_email ON "User" ("email");
+CREATE UNIQUE INDEX idx_user_email ON "users" ("email");
 -- Index for efficient role-based queries
-CREATE INDEX idx_user_role ON "User" ("role");
+CREATE INDEX idx_user_role ON "users" ("role");
 
 
 ---
 -- 2. MSME Table (Stores immutable details about the business being rated)
 ---
-CREATE TABLE "MSME" (
+CREATE TABLE "msme" (
     "msmeId" BIGINT PRIMARY KEY,
     "companyName" VARCHAR(255) NOT NULL,
     "udyamRegistrationNo" VARCHAR(50) UNIQUE,
@@ -44,7 +44,7 @@ CREATE TABLE "MSME" (
     -- Foreign Key Constraint linking MSME details to its User account
     CONSTRAINT fk_msme_user
         FOREIGN KEY ("msmeId")
-        REFERENCES "User" ("userId")
+        REFERENCES "users" ("userId")
         ON DELETE CASCADE
 );
 
@@ -52,7 +52,7 @@ CREATE TABLE "MSME" (
 ---
 -- 3. DMA_Assessment Table (The central record of a completed Digital Maturity Assessment audit)
 ---
-CREATE TABLE "DMA_Assessment" (
+CREATE TABLE "dma_assessment" (
     "assessmentId" BIGSERIAL PRIMARY KEY,
     "msmeId" BIGINT NOT NULL,
     "auditorId" BIGINT NOT NULL,
@@ -67,24 +67,24 @@ CREATE TABLE "DMA_Assessment" (
     -- Foreign Keys
     CONSTRAINT fk_dma_msme
         FOREIGN KEY ("msmeId")
-        REFERENCES "MSME" ("msmeId")
+        REFERENCES "msme" ("msmeId")
         ON DELETE CASCADE,
 
     CONSTRAINT fk_dma_auditor
         FOREIGN KEY ("auditorId")
-        REFERENCES "User" ("userId")
+        REFERENCES "users" ("userId")
         ON DELETE SET NULL -- If auditor leaves, keep assessment but nullify auditor link
 );
 
 -- Index for efficient access to the assessment data JSON fields
-CREATE INDEX idx_dma_assessment_json_gin ON "DMA_Assessment" USING GIN ("assessmentDetailJson");
-CREATE INDEX idx_dma_assessment_msme ON "DMA_Assessment" ("msmeId");
+CREATE INDEX idx_dma_assessment_json_gin ON "dma_assessment" USING GIN ("assessmentDetailJson");
+CREATE INDEX idx_dma_assessment_msme ON "dma_assessment" ("msmeId");
 
 
 ---
 -- 4. AnchorRecord Table (Provides the immutable proof link to the blockchain ledger)
 ---
-CREATE TABLE "AnchorRecord" (
+CREATE TABLE "anchor_record" (
     "anchorId" BIGINT PRIMARY KEY, -- Links directly to DMA_Assessment.assessmentId
     "type" VARCHAR(10) NOT NULL CHECK ("type" IN ('DMA', 'CMA')), -- DMA or future CMA
     "blockchainTxId" VARCHAR(255) UNIQUE NOT NULL,
@@ -95,9 +95,9 @@ CREATE TABLE "AnchorRecord" (
     -- Foreign Key Constraint linking the anchor proof back to the specific assessment
     CONSTRAINT fk_anchor_dma_assessment
         FOREIGN KEY ("anchorId")
-        REFERENCES "DMA_Assessment" ("assessmentId")
+        REFERENCES "dma_assessment" ("assessmentId")
         ON DELETE CASCADE
 );
 
 -- Index for fast blockchain verification lookups
-CREATE INDEX idx_anchor_txid ON "AnchorRecord" ("blockchainTxId");
+CREATE INDEX idx_anchor_txid ON "anchor_record" ("blockchainTxId");

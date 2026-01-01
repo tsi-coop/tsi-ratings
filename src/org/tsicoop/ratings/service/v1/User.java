@@ -198,7 +198,7 @@ public class User implements Action {
         String otp = String.format("%06d", new Random().nextInt(1000000));
 
         // Update SQL to store OTP and set expiry (PostgreSQL interval syntax)
-        String updateSql = "UPDATE \"User\" SET \"otpCode\" = ?, \"otpExpiry\" = NOW() + INTERVAL '5 minutes' WHERE email = ?";
+        String updateSql = "UPDATE \"users\" SET \"otpCode\" = ?, \"otpExpiry\" = NOW() + INTERVAL '5 minutes' WHERE email = ?";
 
         try {
             conn = pool.getConnection();
@@ -236,8 +236,8 @@ public class User implements Action {
 
         // SQL joins User and MSME tables, filters by email, and ensures the user role is MSME_OWNER
         String sql = "SELECT u.\"userId\" AS msme_user_id, m.\"companyName\", m.\"udyamRegistrationNo\" " +
-                "FROM \"User\" u " +
-                "JOIN \"MSME\" m ON u.\"userId\" = m.\"msmeId\" " +
+                "FROM \"users\" u " +
+                "JOIN \"msme\" m ON u.\"userId\" = m.\"msmeId\" " +
                 "WHERE u.email = ?";
 
         try {
@@ -277,7 +277,7 @@ public class User implements Action {
         JSONObject result = new JSONObject();
 
         // Fetch user data including OTP and expiry
-        String sql = "SELECT \"userId\", \"email\", \"role\", \"otpCode\", \"otpExpiry\" FROM \"User\" WHERE email = ?";
+        String sql = "SELECT \"userId\", \"email\", \"role\", \"otpCode\", \"otpExpiry\" FROM \"users\" WHERE email = ?";
 
         try {
             conn = pool.getConnection();
@@ -322,7 +322,8 @@ public class User implements Action {
                     claims.put("email", email);
                     claims.put("role", roleName);
 
-                    String generatedToken = JWTUtil.generateToken(email, null, roleName);
+                    String generatedToken = JWTUtil.generateToken(email, userId, roleName);
+                    System.out.println("Token:"+generatedToken);
 
                     result.put("success", true);
                     result.put("message", "Login successful.");
@@ -352,7 +353,7 @@ public class User implements Action {
         PreparedStatement pstmt = null;
         PoolDB pool = new PoolDB();
         // Clear both fields in the User table
-        String sql = "UPDATE \"User\" SET \"otpCode\" = NULL, \"otpExpiry\" = NULL WHERE \"userId\" = ?";
+        String sql = "UPDATE \"users\" SET \"otpCode\" = NULL, \"otpExpiry\" = NULL WHERE \"userId\" = ?";
         try {
             conn = pool.getConnection();
             pstmt = conn.prepareStatement(sql);
@@ -381,7 +382,7 @@ public class User implements Action {
         Long newUserId = null;
 
         // 1. Insert into User Table
-        String sqlUser = "INSERT INTO \"User\" (\"email\", \"role\", \"one_liner\", \"linkedin\") VALUES (?, ?, ?, ?) RETURNING \"userId\"";
+        String sqlUser = "INSERT INTO \"users\" (\"email\", \"role\", \"one_liner\", \"linkedin\") VALUES (?, ?, ?, ?) RETURNING \"userId\"";
 
         try {
             conn = pool.getConnection();
@@ -418,7 +419,7 @@ public class User implements Action {
                     throw new IllegalArgumentException("MSME_OWNER requires companyName, udyamRegistrationNo, and industrySector.");
                 }
 
-                String sqlMsme = "INSERT INTO \"MSME\" (\"msmeId\", \"companyName\", \"udyamRegistrationNo\", \"industrySector\", \"contactName\") VALUES (?, ?, ?, ?, ?)";
+                String sqlMsme = "INSERT INTO \"msme\" (\"msmeId\", \"companyName\", \"udyamRegistrationNo\", \"industrySector\", \"contactName\") VALUES (?, ?, ?, ?, ?)";
                 pstmtMsme = conn.prepareStatement(sqlMsme);
                 pstmtMsme.setLong(1, newUserId);
                 pstmtMsme.setString(2, companyName);
@@ -476,7 +477,7 @@ public class User implements Action {
         Connection conn = null;
         PreparedStatement pstmt = null;
         PoolDB pool = new PoolDB();
-        String sql = "UPDATE \"User\" SET \"last_login_at\" = NOW() WHERE \"userId\" = ?";
+        String sql = "UPDATE \"users\" SET \"last_login_at\" = NOW() WHERE \"userId\" = ?";
         try {
             conn = pool.getConnection();
             pstmt = conn.prepareStatement(sql);
@@ -517,7 +518,7 @@ public class User implements Action {
         ResultSet rs = null;
         PoolDB pool = new PoolDB();
 
-        StringBuilder sqlBuilder = new StringBuilder("SELECT COUNT(*) FROM \"User\" WHERE \"email\" = ?");
+        StringBuilder sqlBuilder = new StringBuilder("SELECT COUNT(*) FROM \"users\" WHERE \"email\" = ?");
         List<Object> params = new ArrayList<>();
         params.add(email);
 

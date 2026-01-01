@@ -79,8 +79,7 @@
         const USER_API_URL = '/api/v1/user';
         const AUTH_TOKEN = localStorage.getItem('token');
 
-                // --- UI/Modal Functions ---
-
+        // --- UI/Modal Functions ---
         function openNewDmaModal() {
             document.getElementById('new-dma-modal').classList.remove('hidden');
             document.getElementById('msme-email-input').focus();
@@ -102,7 +101,7 @@
             }
         }
 
-      /**
+        /**
          * Utility to map backend status strings to simplified frontend stages and CSS classes.
          */
         function getStatusDetails(status) {
@@ -169,10 +168,6 @@
                     showModalMessage(data.message || `MSME not found or registration incomplete for: ${email}.`);
                     return;
                 }
-
-
-
-
             } catch (e) {
                 showModalMessage('Network error or invalid API response.', 'error');
                 console.error("Error fetching MSME details:", e);
@@ -249,8 +244,7 @@
                         'Authorization': `Bearer ${AUTH_TOKEN}`
                     },
                     body: JSON.stringify({
-                        _func: 'get_assessment_list', // Assumed backend function
-                        auditorId: 8
+                        _func: 'get_assessment_list'
                     })
                 });
 
@@ -311,9 +305,10 @@
     </div>
 
     <nav class="flex-grow">
-        <a href="auditor-dashboard.html" class="nav-item">
+        <a href="#" class="nav-item">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             Dashboard
+            <span style="color: red; font-size: 10px; margin-left: 8px; font-weight: normal;">Coming Soon</span>
         </a>
         <a href="#" class="nav-item active">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2z"/></svg>
@@ -322,6 +317,7 @@
         <a href="#" class="nav-item">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/></svg>
             Settings
+            <span style="color: red; font-size: 10px; margin-left: 8px; font-weight: normal;">Coming Soon</span>
         </a>
     </nav>
 
