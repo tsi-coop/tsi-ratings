@@ -93,6 +93,53 @@
         let assessmentData = null;
         let questionnaire = null;
 
+        /**
+         * Logic to map score to Digital Maturity Level details
+         */
+        function getRatingInfo(score) {
+            if(score <= 28) {
+                return {
+                    rating: 1,
+                    summary: "Level 1: Nascent",
+                    description: "The organisation has very limited digital adoption, largely relies on manual processes, and lacks a clear digital strategy. Digital tools, if used, are isolated and reactive. Awareness of digital potential is low.",
+                    characteristics: "Primarily offline, basic communication, no structured data, high manual effort, low digital skill set.",
+                    recommendation: "Focus on foundational digital literacy, basic online presence (GMB, social media), and initial digitization of core administrative tasks."
+                };
+            } else if(score <= 41) {
+                return {
+                    rating: 2,
+                    summary: "Level 2: Emerging",
+                    description: "The organisation has begun to adopt some digital tools, often in an uncoordinated manner. There's an awareness of digital benefits, but no cohesive strategy. Processes might be partially digitized.",
+                    characteristics: "Some online presence, basic use of digital communication, fragmented data, growing but inconsistent use of software.",
+                    recommendation: "Develop a simple digital roadmap, explore cloud tools for efficiency, establish basic cybersecurity, and offer introductory digital training."
+                };
+            } else if(score <= 54) {
+                return {
+                    rating: 3,
+                    summary: "Level 3: Developing",
+                    description: "The organisation is actively integrating digital tools into various aspects of its business. There's a nascent digital strategy, and some processes are becoming more efficient. Data collection exists but analysis might be limited.",
+                    characteristics: "Dedicated website, basic digital marketing, some internal collaboration tools, moderate digital skills, conscious of data.",
+                    recommendation: "Integrate existing digital tools, explore CRM/ERP Lite, implement structured digital marketing, and invest in targeted skill development."
+                };
+            } else if(score <= 67) {
+                return {
+                    rating: 4,
+                    summary: "Level 4: Mature",
+                    description: "The organisation leverages digital technologies strategically across most functions. They have a clear digital vision, data-driven decision-making is emerging, and cybersecurity is prioritized.",
+                    characteristics: "Strong online presence, active digital marketing, automated key processes, data-driven insights, proactive cybersecurity, good digital culture.",
+                    recommendation: "Optimize digital processes, explore advanced analytics, consider AI/automation pilot projects, and foster continuous digital innovation."
+                };
+            } else {
+                return {
+                    rating: 5,
+                    summary: "Level 5: Advanced",
+                    description: "The organisation is a digitally transformed entity, continuously innovating and leveraging technology to gain a competitive advantage. Digital is ingrained in its culture, strategy, and operations.",
+                    characteristics: "Digital-first approach, highly automated and integrated systems, advanced analytics, personalized customer experiences, robust cybersecurity, continuous digital learning and adaptation.",
+                    recommendation: "Explore disruptive technologies, engage in industry leadership, develop digital products/services, and benchmark against global best practices."
+                };
+            }
+        }
+
         function downloadPDF() {
             const element = document.getElementById('report-content');
             const opt = {
@@ -158,6 +205,44 @@
                 container.innerHTML = `<div class="p-10 text-center text-gray-400">Loading Report Details...</div>`;
                 return;
             }
+
+            const score = assessmentData.finalTsiScore || 0;
+            const ratingInfo = getRatingInfo(score);
+
+            // Set final score and title
+            document.getElementById('final-score-badge').textContent = `${score}%`;
+            document.getElementById('rating-summary-text').textContent = ratingInfo.summary;
+
+            // Render Rating Analysis Section
+            const analysisContainer = document.getElementById('rating-analysis-container');
+            analysisContainer.innerHTML = `
+                <div class="mb-10 p-6 border-2 border-tsi-primary rounded-xl bg-teal-50">
+                    <h2 class="text-xl font-black primary-text mb-4 flex items-center">
+                        <span class="mr-2">📊</span> Digital Maturity Analysis
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="text-xs uppercase tracking-widest font-bold text-gray-400 mb-1">Status Description</h3>
+                                <p class="text-sm text-gray-700 leading-relaxed">${ratingInfo.description}</p>
+                            </div>
+                            <div>
+                                <h3 class="text-xs uppercase tracking-widest font-bold text-gray-400 mb-1">Key Characteristics</h3>
+                                <p class="text-sm text-gray-800 font-medium">${ratingInfo.characteristics}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg border border-teal-100 shadow-sm">
+                            <h3 class="text-xs uppercase tracking-widest font-bold primary-text mb-2">Strategic Recommendation</h3>
+                            <p class="text-sm text-gray-700 leading-relaxed italic border-l-4 border-tsi-primary pl-3">
+                                "${ratingInfo.recommendation}"
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
             const results = assessmentData.assessmentDetailJson.results;
             questionnaire.sections.forEach(section => {
                 const sectionEl = document.createElement('div');
@@ -177,11 +262,11 @@
                 });
                 container.appendChild(sectionEl);
             });
+
             const notesEl = document.createElement('div');
             notesEl.className = 'mt-10 p-4 bg-gray-50 border rounded-lg';
             notesEl.innerHTML = `<h3 class="text-sm font-bold text-gray-700 mb-2">Auditor's Qualitative Summary</h3><p class="text-sm text-gray-600 italic">"${assessmentData.qualitativeNotes || 'No notes provided.'}"</p>`;
             container.appendChild(notesEl);
-            document.getElementById('final-score-badge').textContent = `${assessmentData.finalTsiScore || 'N/A'}%`;
         }
 
         window.onload = initReport;
@@ -228,7 +313,10 @@
     <div class="primary-bg text-white p-6 rounded-xl flex justify-between items-center mb-10">
         <div>
             <p class="text-xs uppercase tracking-wider opacity-80">Digital Maturity Score</p>
-            <h2 class="text-4xl font-black" id="final-score-badge">--%</h2>
+            <div class="flex items-baseline gap-4">
+                <h2 class="text-4xl font-black" id="final-score-badge">--%</h2>
+                <span class="text-xl font-bold opacity-90 border-l border-white/30 pl-4" id="rating-summary-text">Calculating...</span>
+            </div>
         </div>
         <div class="text-right">
             <p class="text-sm font-bold">Operational Resilience Asset</p>
@@ -236,6 +324,10 @@
         </div>
     </div>
 
+    <!-- Dynamic Rating Analysis Section -->
+    <div id="rating-analysis-container"></div>
+
+    <!-- Detailed Assessment Body -->
     <div id="sections-container">
         <div class="p-10 text-center text-gray-400">Initialising Assessment Preview...</div>
     </div>
