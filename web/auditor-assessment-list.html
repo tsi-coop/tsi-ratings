@@ -115,7 +115,8 @@
             }
             if (upperStatus === 'ANCHORED') {
                 return { name: 'PUBLISHED', class: 'status-published', actions: [
-                    { type: 'view', text: 'View Proof', link: (id) => `blockchain-proof.html?assessmentId=${id}`, style: 'primary-text' }
+                    { type: 'view', text: 'View Proof', link: (id) => `blockchain-proof.html?assessmentId=${id}`, style: 'primary-text' },
+                    { type: 'download', text: 'Download', link: (id) => `download.html?assessmentId=${id}`, style: 'primary-text' }
                 ] };
             }
             return { name: upperStatus, class: 'bg-gray-200 text-gray-700', actions: [] };
