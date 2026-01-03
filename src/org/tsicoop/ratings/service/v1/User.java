@@ -323,7 +323,7 @@ public class User implements Action {
                     claims.put("role", roleName);
 
                     String generatedToken = JWTUtil.generateToken(email, userId, roleName);
-                    System.out.println("Token:"+generatedToken);
+                    //System.out.println("Token:"+generatedToken);
 
                     result.put("success", true);
                     result.put("message", "Login successful.");

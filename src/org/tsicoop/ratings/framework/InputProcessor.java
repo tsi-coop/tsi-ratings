@@ -137,7 +137,7 @@ public class InputProcessor {
             //System.out.println("authToken:"+authToken);
             userId = Long.parseLong((String)authToken.get("userId"));
         }catch(Exception e){
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return userId;
     }

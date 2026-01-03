@@ -57,7 +57,14 @@ public class InterceptingFilter implements Filter {
         HttpServletResponse res = (HttpServletResponse) response;
         String method = req.getMethod();
         String uri = req.getRequestURI();
-        String servletPath = req.getServletPath(); // e.g., /api/v1/user, /api/v1/policy
+        String servletPath = req.getServletPath(); // e.g.,  /verify, /api/v1/user, /api/v1/policy
+        //System.out.println(servletPath);
+        if(servletPath != null & servletPath.equalsIgnoreCase("/verify")) {
+            request.getRequestDispatcher("/blockchain-proof.html").forward(request, response);
+            return;
+        } else if (!servletPath.startsWith("/api")) {
+            res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed");
+        }
 
         // Set common response headers (CORS, Content-Type, Encoding)
         // CORS headers are crucial for frontend access from different origins
@@ -229,7 +236,7 @@ public class InterceptingFilter implements Filter {
         System.out.println("Loaded TSI App Config");
         JSONSchemaValidator.createInstance(filterConfig.getServletContext());
         System.out.println("Loaded TSI Schema Validator");
-        System.out.println("TSI DPDP CMS Service started in " + System.getenv("TSI_DPDP_CMS_ENV") + " environment");
+        System.out.println("TSI Ratings Service started in " + System.getenv("TSI_RATINGS_ENV") + " environment");
 
         // Initialize JWT and API Key validators here if they need global 5
         // JwtValidator.init(SystemConfig.getAppConfig().getProperty("jwt.secret"));

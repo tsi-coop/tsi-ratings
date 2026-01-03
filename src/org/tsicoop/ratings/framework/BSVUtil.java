@@ -11,7 +11,7 @@ public class BSVUtil {
     public JSONObject validateAssessment(String txId, String tsiHash) throws Exception {
         JSONObject result =  new JSONObject();
         result.put("valid",false);
-        System.out.println("txId:"+txId+" - tsiHash:"+tsiHash);
+        //System.out.println("txId:"+txId+" - tsiHash:"+tsiHash);
         JSONObject response = null;
         try {
             response = new HttpClient().sendGet("https://api.whatsonchain.com/v1/bsv/main/tx/"+txId);
