@@ -391,15 +391,8 @@ public class User implements Action {
             pstmtUser = conn.prepareStatement(sqlUser, Statement.RETURN_GENERATED_KEYS);
             pstmtUser.setString(1, email);
             pstmtUser.setString(2, role);
-
-            // Set optional professional fields (only relevant for Auditor/Lender)
-            if ("IT_AUDITOR".equals(role) || "FIN_PARTNER".equals(role) || "ADMIN".equals(role)) {
-                pstmtUser.setString(3, oneLiner);
-                pstmtUser.setString(4, linkedin);
-            } else {
-                pstmtUser.setNull(3, java.sql.Types.VARCHAR);
-                pstmtUser.setNull(4, java.sql.Types.VARCHAR);
-            }
+            pstmtUser.setString(3, oneLiner);
+            pstmtUser.setString(4, linkedin);
 
             int affectedRows = pstmtUser.executeUpdate();
             if (affectedRows == 0) {

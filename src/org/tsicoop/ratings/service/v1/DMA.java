@@ -464,7 +464,7 @@ public class DMA implements Action {
         // SQL Query to join DMA_Assessment with MSME, User (Auditor), and LEFT JOIN AnchorRecord
         String sql = "SELECT dma.\"assessmentId\", dma.\"msmeId\", dma.\"finalTsiScore\", dma.status, dma.\"completionDate\", dma.\"requestFormJson\", dma.\"assessmentDetailJson\", " +
                 "ar.\"blockchainTxId\", ar.\"tsiHash\", ar.\"anchorDate\", " +
-                "u.email AS auditor_email, m.\"companyName\" AS msme_name, m.\"udyamRegistrationNo\" " +
+                "u.email AS auditor_email, m.\"companyName\" AS msme_name, m.\"udyamRegistrationNo\", u.\"linkedin\" " +
                 "FROM \"dma_assessment\" dma " +
                 "JOIN \"users\" u ON dma.\"auditorId\" = u.\"userId\" " +
                 "JOIN \"msme\" m ON dma.\"msmeId\" = m.\"msmeId\" " +
@@ -492,6 +492,7 @@ public class DMA implements Action {
                 result.put("msmeName", rs.getString("msme_name"));
                 result.put("udyamRegistrationNo", rs.getString("udyamRegistrationNo"));
                 result.put("auditorEmail", rs.getString("auditor_email"));
+                result.put("auditorLinkedin", rs.getString("linkedin"));
 
                 // --- Assessment Payload Data (JSONB) ---
                 String assessmentDetailJsonString = rs.getString("assessmentDetailJson");
