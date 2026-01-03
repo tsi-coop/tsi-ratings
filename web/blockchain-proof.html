@@ -50,23 +50,65 @@
             padding: 0.5rem;
             border-radius: 0.25rem;
         }
+
+        /* Captcha Styles */
+        #captcha-display {
+            font-family: 'Courier New', Courier, monospace;
+            background: #eee;
+            padding: 10px;
+            letter-spacing: 5px;
+            font-weight: bold;
+            font-size: 1.5rem;
+            user-select: none;
+            background-image: linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc);
+            background-size: 10px 10px;
+            background-position: 0 0, 5px 5px;
+            text-decoration: line-through;
+            font-style: italic;
+        }
     </style>
   <script>
         const AUTH_TOKEN = localStorage.getItem('token');
         const DMA_API_URL = '/api/v1/dma';
-        const WHATONCHAIN_BASE_URL = 'https://whatsonchain.com/tx/'; // Actual WhatOnChain URL
+        const WHATONCHAIN_BASE_URL = 'https://whatsonchain.com/tx/';
 
-        // Get Assessment ID from URL (e.g., ?assessmentId=101)
         const urlParams = new URLSearchParams(window.location.search);
         const CURRENT_ASSESSMENT_ID = parseInt(urlParams.get('assessmentId')) || null;
 
         let storedTxId = null;
         let storedTsiHash = null;
+        let currentCaptcha = "";
+
+        // --- Captcha Logic ---
+
+        function generateCaptcha() {
+            const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+            let result = "";
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            currentCaptcha = result;
+            document.getElementById('captcha-display').textContent = result;
+        }
+
+        function verifyCaptcha() {
+            const input = document.getElementById('captcha-input').value;
+            const errorMsg = document.getElementById('captcha-error');
+
+            if (input === currentCaptcha) {
+                document.getElementById('captcha-overlay').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                loadAssessmentAndProof();
+            } else {
+                errorMsg.classList.remove('hidden');
+                generateCaptcha();
+                document.getElementById('captcha-input').value = "";
+            }
+        }
 
         // --- Core Verification Logic ---
 
         async function loadAssessmentAndProof() {
-            const txIdDisplay = document.getElementById('txid-display');
             const dataContainer = document.getElementById('anchored-data-container');
 
             dataContainer.innerHTML = '';
@@ -78,9 +120,7 @@
             }
 
             try {
-                // 1. CALL JAVA MIDDLEWARE to retrieve DB-stored hash and TXID
                 const dbData = await fetchAssessmentData(CURRENT_ASSESSMENT_ID);
-                console.log(dbData);
 
                 if (dbData.error) {
                     showVerificationStatus(`Error in DB Lookup: ${dbData.error}`, 'error');
@@ -97,15 +137,12 @@
                     return;
                 }
 
-                // Display retrieved DB metadata and enable verification button
                 renderAssessmentMetadata(dbData);
                 document.getElementById('validate-button').disabled = false;
                 showVerificationStatus('DB Record Found. Ready to validate against Blockchain.', 'default');
 
-
             } catch (error) {
                 showVerificationStatus(`CRITICAL ERROR during data load: ${error.message}`, 'error');
-                console.error("Verification load error:", error);
             }
         }
 
@@ -121,9 +158,7 @@
                     return;
                 }
 
-                // 2. CALL EXTERNAL EXPLORER to retrieve on-chain data
                 const result = await matchOnChainHash(storedTxId, storedTsiHash);
-                console.log(result);
                 if (result.valid === true) {
                     showVerificationStatus('VERIFICATION SUCCESS: Presented Hash MATCHES On-Chain Hash!', 'match');
                     document.getElementById('explorer-link').classList.remove('hidden');
@@ -138,19 +173,14 @@
             }
         }
 
-
         // --- API Helpers ---
 
-        /**
-         * Simulates fetching the assessment record from the Java Middleware based on Assessment ID.
-         */
         async function fetchAssessmentData(assessmentId) {
-            // In reality, Java middleware would query DMA_Assessment JOIN AnchorRecord by assessmentId.
             const response = await fetch(DMA_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
                 body: JSON.stringify({
-                    _func: 'get_dma_assessment_details', // Existing Java function
+                    _func: 'get_dma_assessment_details',
                     assessmentId: assessmentId
                 })
             });
@@ -161,28 +191,21 @@
                  return { error: result.message || "Assessment details not found." };
             }
 
-            const assessment = result.data;
-            return assessment;
+            return result.data;
          }
 
-        /**
-         * Simulates fetching the inscribed hash from an external explorer (WhatOnChain).
-         * This simulates the ExpressJS verification endpoint's core task (retrieving the hash).
-         */
         async function matchOnChainHash(txId, expectedHash) {
-            // In reality, Java middleware would query DMA_Assessment JOIN AnchorRecord by assessmentId.
             const response = await fetch(DMA_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
                 body: JSON.stringify({
                     _func: 'validate_assessment',
-                    txId: storedTxId,
-                    tsiHash: storedTsiHash
+                    txId: txId,
+                    tsiHash: expectedHash
                 })
             });
 
-            const result = await response.json();
-            return result;
+            return await response.json();
         }
 
         // --- UI Display Helpers ---
@@ -208,28 +231,45 @@
                     <p><strong>Blockchain TXID:</strong> <span class="hash-code" id="txid-display-code">${data.blockchainTxId}</span></p>
                 </div>
             `;
-            // Set the external link
-            document.getElementById('woc-link').href = 'https://whatsonchain.com/tx/'+ storedTxId;
+            document.getElementById('woc-link').href = WHATONCHAIN_BASE_URL + storedTxId;
         }
 
         // --- Initialization ---
-        window.onload = loadAssessmentAndProof;
+        window.onload = generateCaptcha;
     </script>
 </head>
 <body>
 
-<div class="verification-card">
+<!-- Captcha Overlay -->
+<div id="captcha-overlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900 bg-opacity-75">
+  <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center">
+    <h2 class="text-2xl font-bold primary-text mb-4">Security Verification</h2>
+    <p class="text-gray-600 mb-6 text-sm">Please verify you are human to access the blockchain verification records.</p>
+
+    <div id="captcha-display" class="mb-4 rounded flex items-center justify-center"></div>
+
+    <button onclick="generateCaptcha()" class="text-xs text-tsi-primary hover:underline mb-4 block mx-auto">Refresh Captcha</button>
+
+    <input type="text" id="captcha-input" placeholder="Enter Captcha"
+           class="w-full p-3 border rounded-lg mb-4 text-center font-bold tracking-widest focus:ring-2 focus:ring-tsi-primary outline-none">
+
+    <p id="captcha-error" class="text-red-500 text-xs mb-4 hidden font-semibold">Incorrect Captcha. Please try again.</p>
+
+    <button onclick="verifyCaptcha()"
+            class="w-full primary-bg text-white py-3 rounded-lg font-bold hover:opacity-90 transition">
+      Verify & View Proof
+    </button>
+  </div>
+</div>
+
+<div id="main-content" class="verification-card hidden">
   <header class="text-center mb-8">
     <h1 class="text-3xl font-extrabold primary-text mb-2">Blockchain Proof Verification</h1>
     <p class="text-gray-500">Validation of TSI Digital Maturity score integrity against the public ledger.</p>
   </header>
 
-  <!-- Result Container -->
-  <div id="verification-result-container" class="mb-8">
-    <!-- Dynamic verification status appears here -->
-  </div>
+  <div id="verification-result-container" class="mb-8"></div>
 
-  <!-- Action Section (Moved here to be near the results) -->
   <div class="mb-8 p-6 border rounded-lg bg-gray-50 text-center">
     <button id="validate-button" onclick="validateOnChainProof()"
             class="primary-bg text-white px-6 py-3 rounded-md text-lg font-semibold shadow-md hover:bg-opacity-90 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
@@ -242,11 +282,9 @@
     </div>
   </div>
 
-  <!-- Anchored Data Preview -->
   <div id="anchored-data-container" class="card p-6">
     <p class="text-gray-500 text-center">Loading anchored metadata...</p>
   </div>
-
 </div>
 
 </body>
