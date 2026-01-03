@@ -26,7 +26,8 @@ public class InterceptingFilter implements Filter {
             "get_active_policy", // For active policy retrieval
             "link_user",
             "submit_grievance", // Allowing grievance submission from client
-            "get_grievance"
+            "get_grievance",
+            "get_dma_assessment_details"
             // Add other client-facing functions as needed
     ));
 
@@ -34,7 +35,9 @@ public class InterceptingFilter implements Filter {
             "request_otp",
             "register_user",
             "login_otp",
-            "login"
+            "login",
+            "get_dma_assessment_details",
+            "validate_assessment"
     ));
 
     private static final HashMap<String, String> filterConfig = new HashMap<>(); // Unused in original, keeping for template consistency
