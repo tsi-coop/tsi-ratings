@@ -209,6 +209,7 @@
             const score = assessmentData.finalTsiScore || 0;
             const ratingInfo = getRatingInfo(score);
             const msmedisplayname = assessmentData.msmeName || '';
+            const udyamId = assessmentData.udyamRegistrationNo || '';
             const auditoremail = assessmentData.auditorEmail || '';
             const auditorlinkedin = assessmentData.auditorLinkedin || '';
 
@@ -218,6 +219,7 @@
 
             // Set MSME name and Auditor Email
             document.getElementById('msme-display-name').textContent = `${msmedisplayname}`;
+            document.getElementById('udyam-id').textContent = `${udyamId}`;
             document.getElementById('auditor-display-name').textContent = `${auditoremail}`;
             document.getElementById('auditor-website').textContent = `${auditorlinkedin}`;
 
@@ -273,7 +275,7 @@
 
             const notesEl = document.createElement('div');
             notesEl.className = 'mt-10 p-4 bg-gray-50 border rounded-lg';
-            notesEl.innerHTML = `<h3 class="text-sm font-bold text-gray-700 mb-2">Auditor's Qualitative Summary</h3><p class="text-sm text-gray-600 italic">"${assessmentData.qualitativeNotes || 'No notes provided.'}"</p>`;
+            notesEl.innerHTML = `<h3 class="text-sm font-bold text-gray-700 mb-2">Auditor's Qualitative Summary</h3><p class="text-sm text-gray-600 italic">"${assessmentData.assessmentDetailJson.auditorNotes || 'No notes provided.'}"</p>`;
             container.appendChild(notesEl);
         }
 
@@ -287,7 +289,10 @@
         <span class="text-sm font-medium text-gray-500">TSI Ratings: Digital Maturity Assessment (DMA) Report</span>
     </div>
     <div class="flex gap-3">
-        <button onclick="window.close()" class="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg">Close</button>
+        <!-- Replaced button with anchor tag for more reliable navigation -->
+        <a href="auditor-assessment-list.html" class="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg flex items-center">
+            Close
+        </a>
         <button onclick="downloadPDF()" class="px-6 py-2 primary-bg text-white rounded-lg font-bold hover:opacity-90 transition">Download PDF Report</button>
     </div>
 </div>
@@ -308,6 +313,9 @@
             <div class="grid grid-cols-[auto,1fr] gap-x-8 gap-y-2 text-sm">
                 <div class="text-gray-400 font-medium">Organisation Name</div>
                 <div class="font-bold text-gray-800" id="msme-display-name">Shakti Textiles & Exports</div>
+
+                <div class="text-gray-400 font-medium">Udyam Reg No</div>
+                <div class="font-bold text-gray-800" id="udyam-id">123456</div>
 
                 <div class="text-gray-400 font-medium">Auditor Email</div>
                 <div class="font-bold text-gray-800" id="auditor-display-name">IT Auditor (Certified)</div>
