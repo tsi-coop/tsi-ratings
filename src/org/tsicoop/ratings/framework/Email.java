@@ -33,6 +33,8 @@ public class Email {
     }
 
     public static void sendOTP(String email, String otp){
+        //System.out.println(ZOHO_API_HOST);
+        //System.out.println(ZOHO_AUTH_KEY);
         if(System.getenv("TSI_RATINGS_ENV") != null && System.getenv("TSI_RATINGS_ENV").equalsIgnoreCase("PRODUCTION")) {
             String subject = "Your Login OTP";
             StringBuffer buff = new StringBuffer();

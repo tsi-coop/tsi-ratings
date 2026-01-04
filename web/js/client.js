@@ -20,7 +20,7 @@ document.getElementById('tokenize-btn').addEventListener('click', async () => {
     const client = new AuthFetch(wallet)
 
     // Fetch weather stats using AuthFetch.
-    const response = await client.fetch('http://localhost:8085/anchor-tsi-rating', {
+    const response = await client.fetch('https://tsicoop.org/anchor-tsi-rating', {
       method: 'POST',
       // 1. Set the body to the JSON stringified payload
       body: JSON.stringify(tsiPayload),

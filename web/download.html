@@ -175,7 +175,7 @@
         async function initReport() {
             generateQRCode();
             try {
-                const qRes = await fetch('/api/v1/dma', {
+                const qRes = await fetch('api/v1/dma', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
                     body: JSON.stringify({ _func: 'get_dma_questionnaire', version: 'v1' })
@@ -183,7 +183,7 @@
                 const qData = await qRes.json();
                 questionnaire = qData.data;
 
-                const aRes = await fetch('/api/v1/dma', {
+                const aRes = await fetch('api/v1/dma', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
                     body: JSON.stringify({ _func: 'get_dma_assessment_details', assessmentId: ASSESSMENT_ID })
