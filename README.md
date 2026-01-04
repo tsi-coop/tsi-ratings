@@ -84,7 +84,7 @@ Before you begin, ensure you have the following software installed on your devel
       ```
 * **BSV Blockchain**: For anchoring the token.
   * Get an overview of [BSV Blockchain](https://bsvblockchain.org/)
-  * Install Metanet Client: [Download and install Metanet Desktop](https://getmetanet.com/)
+  * Install Metanet Client:[Download and install Metanet Desktop](https://getmetanet.com/)
   * Explore [WhatsonChain](https://whatsonchain.com/)
       
 ## Installation Steps
