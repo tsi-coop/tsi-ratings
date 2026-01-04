@@ -80,6 +80,7 @@ public class User implements Action {
                     }
 
                     output = handleOtpRequest(otpEmail);
+                    //System.out.println(output);
                     if (output.containsKey("error")) {
                         int statusCode = ((Long) output.get("status_code")).intValue();
                         OutputProcessor.errorResponse(res, statusCode, (String) output.get("error_message"), (String) output.get("error_details"), req.getRequestURI());
@@ -195,7 +196,7 @@ public class User implements Action {
         JSONObject result = new JSONObject();
 
         // Generate 6-digit OTP, valid for 5 minutes
-        String otp = String.format("%06d", new Random().nextInt(1000000));
+        String otp = Email.generate6DigitOTP(); //String.format("%06d", new Random().nextInt(1000000));
 
         // Update SQL to store OTP and set expiry (PostgreSQL interval syntax)
         String updateSql = "UPDATE \"users\" SET \"otpCode\" = ?, \"otpExpiry\" = NOW() + INTERVAL '5 minutes' WHERE email = ?";
@@ -210,12 +211,13 @@ public class User implements Action {
             pstmt.executeUpdate();
 
             // User exists and OTP/Expiry were updated
-            // --- To do: Call EmailService.sendOtp(email, otp); would happen here ---
+            // --- Call EmailService.sendOtp(email, otp); would happen here ---
+            Email.sendOTP(email,otp);
 
             result.put("success", true);
             result.put("message", "OTP generated and sent to " + email);
             // NOTE: For demonstration purposes, we return the OTP. REMOVE IN PRODUCTION!
-            result.put("debug_otp", otp);
+            //result.put("debug_otp", otp);
 
         } finally {
             pool.cleanup(null, pstmt, conn);
@@ -310,7 +312,12 @@ public class User implements Action {
                     result.put("status_code", (long)HttpServletResponse.SC_UNAUTHORIZED);
                     result.put("error_message", "OTP expired.");
                     result.put("error_details", "The code has expired. Please request a new one.");
-                } else {
+                } else if(!roleName.equalsIgnoreCase("auditor")){
+                    result.put("error", true);
+                    result.put("status_code", (long)HttpServletResponse.SC_UNAUTHORIZED);
+                    result.put("error_message", "Only Auditors allowed to access at the moment");
+                    result.put("error_details", "Only Auditors allowed to access at the moment");
+                }else{
                     // SUCCESS: OTP is valid and not expired
 
                     clearOtpFields(userId); // Clear the OTP fields immediately after success for security

@@ -14,8 +14,8 @@ public class Email {
         HttpClient obj = new HttpClient();
         JSONObject test = new JSONObject();
         JSONObject fromOb = new JSONObject();
-        fromOb.put("address",System.getenv("SENDER_EMAIL"));
-        fromOb.put("name",System.getenv("SENDER_NAME"));
+        fromOb.put("address","noreply@tsicoop.org");
+        fromOb.put("name","TSI Ratings");
         test.put("from",fromOb);
         JSONObject address = new JSONObject();
         address.put("address",email);
@@ -36,9 +36,9 @@ public class Email {
         if(System.getenv("TSI_RATINGS_ENV") != null && System.getenv("TSI_RATINGS_ENV").equalsIgnoreCase("PRODUCTION")) {
             String subject = "Your Login OTP";
             StringBuffer buff = new StringBuffer();
-            buff.append("<p>The OTP for logging into your"+System.getenv("SENDER_EMAIL")+" account is "+otp+". It is valid for 5 minutes.</p>");
+            buff.append("<p>The OTP for logging into your TSI Ratings account is "+otp+". It is valid for 5 minutes.</p>");
             buff.append("<p>Please do not share this OTP with anyone.</p>");
-            buff.append("<p>Warm Regards<br/>"+System.getenv("SENDER_EMAIL")+" Team</p>");
+            buff.append("<p>Warm Regards<br/>"+" TSI Team</p>");
             String content = buff.toString();
             try {
                 new Email().sendEmail(ZOHO_API_HOST,
@@ -53,14 +53,14 @@ public class Email {
         }
     }
 
-    public static String generate4DigitOTP() {
+    public static String generate6DigitOTP() {
         String otpS = null;
         if(System.getenv("TSI_RATINGS_ENV") != null && System.getenv("TSI_RATINGS_ENV").equalsIgnoreCase("PRODUCTION")) {
             SecureRandom random = new SecureRandom();
-            int otp = 1000 + random.nextInt(9000); // Generates a number between 1000 (inclusive) and 9999 (inclusive)
+            int otp = 100000 + random.nextInt(900000); // Generates a number between 1000 (inclusive) and 999999 (inclusive)
             otpS = String.valueOf(otp);
         }else{
-            otpS = "1234";
+            otpS = "123456";
         }
         return otpS;
     }
