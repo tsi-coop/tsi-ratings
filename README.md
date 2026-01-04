@@ -1,7 +1,21 @@
 # TSI Ratings App
-An objective diagnostic framework, designed to give MSMEs and their ecosystem partners a clear, data-driven perspective on where they stand and where they need to go.
+An objective diagnostic framework, designed to give MSMEs and their ecosystem partners a clear, data-driven perspective on where they stand and where they need to go. It helps transform operational trust into verifiable digital collateral.
 
-Note: This project is currently under active development. 
+Note: This solution is currently in Public Preview.
+
+## Getting Started
+
+[Launch Note](https://techadvisory.substack.com/p/unlocking-msme-credit-operational)
+
+[Introduction](https://www.youtube.com/watch?v=4dRcO0ySz2U)
+
+[Functional Demo](https://www.youtube.com/watch?v=4aAh8btPv2E&t=6s)
+
+[Code Walkthrough](https://www.youtube.com/watch?v=tphCEvtJtCk)
+
+[Sample Report](https://github.com/tsi-coop/tsi-ratings/blob/main/reports/TSI_Rating_Report_TSI_Coop.pdf)
+
+[Pilot Portal](https://tsicoop.org/ratings/)
 
 ## Prerequisites
 
@@ -68,6 +82,10 @@ Before you begin, ensure you have the following software installed on your devel
       ```bash
       node -v
       ```
+* **BSV Blockchain**: For anchoring the token.
+  * Get an overview of [BSV Blockchain](https://bsvblockchain.org/)
+  * Install Metanet Client:** [Download and install Metanet Desktop](https://getmetanet.com/)
+  * Explore [WhatsonChain](https://whatsonchain.com/)
       
 ## Installation Steps
 
