@@ -19,4 +19,8 @@ POSTGRES_PASSWD=
 # --- Application Configuration ---
 TSI_RATINGS_ENV=local
 TSI_RATINGS_HOME=
+TSI_RATINGS_SERVER_URL=
 
+# -- Email Settings
+ZOHO_API_HOST=
+ZOHO_AUTH_KEY=
