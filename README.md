@@ -1,7 +1,7 @@
 # TSI Ratings App
-An objective diagnostic framework, designed to give businesses a data-driven perspective on where they stand on digital maturity and where they need to go. It helps transform the digital maturity (operational trust) into verifiable digital collateral.
+TSI Ratings is an objective diagnostic framework that provides a data-driven roadmap for the digital maturity of businesses. More importantly, it bridges the gap between operational health and finance by transforming that digital maturity into verifiable digital collateral.
 
-Note: This solution is currently in Public Preview.
+Note: We developed this as part of a hackathon. This solution is currently in the POC stage.
 
 ## Getting Started
 
