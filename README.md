@@ -15,8 +15,6 @@ Note: We developed this as part of a hackathon. This solution is currently in th
 
 [Sample Report](https://github.com/tsi-coop/tsi-ratings/blob/main/reports/TSI_Rating_Report_TSI_Coop.pdf)
 
-[Pilot Portal](https://tsicoop.org/ratings/)
-
 ## Prerequisites
 
 Before you begin, ensure you have the following software installed on your development machine or server:
