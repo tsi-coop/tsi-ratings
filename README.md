@@ -151,6 +151,19 @@ These steps describe how to install and run the TSI Ratings solution directly on
    ```bash
    npm start
 
+## License & Contributions
+
+This project is fully open-source and distributed under the **Apache 2.0 License**. You are completely free to fork, modify, and customize the codebase to fit your specific technical or enterprise needs without any restriction.
+
+### Contributing Back to the Main Project
+If you have built an optimization, bug fix, or feature extension that you believe would add value to the core platform, we would love to review it. To ensure the main repository remains highly stable and securely managed, direct commits to the `main` branch are restricted.
+
+If you wish to give back your changes to the project, please follow this process:
+
+* **Email the Repository Owner:** Send a brief summary of your modifications and a link to your code branch directly to **[admin@tsicoop.org]**.
+
+Every contribution is manually evaluated for architectural alignment, readability, and long-term maintenance impact before integration. Thank you for respecting this workflow and helping us maintain a clean, resilient core!
+
 ## References
 
 [Digital Maturity Assessment - How does it help?](https://techadvisory.substack.com/p/why-measuring-digital-maturity-matters)
