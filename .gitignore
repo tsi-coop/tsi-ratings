@@ -1,0 +1,9 @@
+# Default ignored files
+/.idea/
+/target/
+.env
+.help
+.help2
+/.claude/
+/server/.env
+
